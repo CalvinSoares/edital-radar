@@ -1,0 +1,61 @@
+{
+  "comentario": "Retificação só vira aviso se compartilhar nº/ano com alerta anterior. Precisão > recall.",
+  "casos": [
+    {
+      "nome": "mesmo edital 005/2026",
+      "tituloRetificacao": "RETIFICAÇÃO DO EDITAL DE CHAMAMENTO PÚBLICO Nº 005/2026",
+      "hierarchy": "Executivo/Casa Civil",
+      "anteriores": [
+        {
+          "alertaId": "a1",
+          "assinanteId": "u1",
+          "titulo": "EDITAL PARA CHAMAMENTO PÚBLICO PRODESP Nº 005/2026",
+          "hierarchy": "Executivo/Casa Civil"
+        }
+      ],
+      "esperadoAlertaId": "a1"
+    },
+    {
+      "nome": "sem número em comum — não vincula",
+      "tituloRetificacao": "RETIFICAÇÃO DO EDITAL DE CHAMAMENTO",
+      "hierarchy": "Executivo",
+      "anteriores": [
+        {
+          "alertaId": "a1",
+          "assinanteId": "u1",
+          "titulo": "EDITAL PARA CHAMAMENTO PÚBLICO PRODESP Nº 005/2026",
+          "hierarchy": "Executivo"
+        }
+      ],
+      "esperadoAlertaId": null
+    },
+    {
+      "nome": "republicação com mesmo número",
+      "tituloRetificacao": "REPUBLICAÇÃO DO EDITAL DE CREDENCIAMENTO Nº 14/2026",
+      "hierarchy": "Executivo/Esportes",
+      "anteriores": [
+        {
+          "alertaId": "a2",
+          "assinanteId": "u1",
+          "titulo": "EDITAL DE CREDENCIAMENTO Nº 14/2026",
+          "hierarchy": "Executivo/Esportes"
+        }
+      ],
+      "esperadoAlertaId": "a2"
+    },
+    {
+      "nome": "número diferente — não vincula",
+      "tituloRetificacao": "RETIFICAÇÃO DO CHAMAMENTO Nº 009/2026",
+      "hierarchy": "Executivo",
+      "anteriores": [
+        {
+          "alertaId": "a1",
+          "assinanteId": "u1",
+          "titulo": "CHAMAMENTO PÚBLICO Nº 005/2026",
+          "hierarchy": "Executivo"
+        }
+      ],
+      "esperadoAlertaId": null
+    }
+  ]
+}
