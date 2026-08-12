@@ -33,6 +33,12 @@ Produto em fases (um repo, uma marca):
    "edital de fomento SP"), grupos de WhatsApp de OSC, federações e
    conselhos municipais (CONDECA, COMAS).
 
+## Documentação
+
+Padrões, invariantes e contratos vivem em
+[`docs/base-de-conhecimentos/`](docs/base-de-conhecimentos/README.md) —
+leitura obrigatória: `contexto-produto.md` e `regras-sistemicas-ia.md`.
+
 ## Estado atual
 
 - [x] Fonte validada (DOE-SP API, 10 dias varridos, relatório em `out/`)
