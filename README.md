@@ -47,6 +47,8 @@ leitura obrigatória: `contexto-produto.md` e `regras-sistemicas-ia.md`.
 - [x] Motor de match por keyword (puro, fronteira de palavra, fixtures rotuladas) — provado no DOE real
 - [x] Cobertura full-text (detalhe de tudo + match local; 13/13 vs gabarito da API, ~10s/dia) + criação de alertas
 - [x] Digest por e-mail (1/assinante, máx 10, termo destacado, dry-run por env) + descadastro em 1 clique
+- [x] Magic-link (uso único, 15 min) + sessão por cookie + painel de termos e avisos
+- [ ] Provisionar produção (Postgres, Vercel, Resend, domínio) e rodar migração
 - [ ] Webhook de bounce → supressão automática
 - [ ] Cadastro por magic-link + painel de termos
 - [ ] Perfil de entidade + match por causa/região (fase Radar)

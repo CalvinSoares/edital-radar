@@ -1,0 +1,38 @@
+---
+import Base from "~/layouts/Base.astro";
+import { COOKIE_DE_SESSAO, opcoesDoCookie } from "~/shared/sessao";
+
+export const prerender = false;
+
+const { token } = Astro.params;
+const tokenValido = typeof token === "string" && /^[0-9a-f-]{36}$/.test(token);
+
+if (tokenValido) {
+  const { db } = await import("~/server/db/cliente");
+  const { usarLoginToken, criarSessao } = await import("~/server/db/repositorios/auth");
+  const assinanteId = await usarLoginToken(db, token);
+  if (assinanteId) {
+    const sessaoId = await criarSessao(db, assinanteId);
+    Astro.cookies.set(COOKIE_DE_SESSAO, sessaoId, opcoesDoCookie());
+    return Astro.redirect("/painel");
+  }
+}
+
+Astro.response.status = 410; // link inválido, usado ou expirado
+---
+
+<Base titulo="Link expirado — Edital Radar">
+  <main class="mx-auto max-w-md px-4 py-24 text-center">
+    <h1 class="font-display text-3xl font-bold text-acento">Esse link não vale mais</h1>
+    <p class="mt-4 text-suave">
+      Links de acesso valem 15 minutos e funcionam uma única vez. Peça um novo
+      — leva segundos.
+    </p>
+    <a
+      href="/entrar"
+      class="mt-8 inline-block rounded-xl bg-acento px-5 py-2.5 font-semibold text-sobre-acento hover:bg-acento-forte"
+    >
+      Pedir novo link
+    </a>
+  </main>
+</Base>

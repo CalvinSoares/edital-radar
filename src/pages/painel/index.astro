@@ -1,0 +1,142 @@
+---
+import { actions, isInputError } from "astro:actions";
+import Base from "~/layouts/Base.astro";
+import Card from "~/components/ui/Card.astro";
+import Field from "~/components/ui/Field.astro";
+import Button from "~/components/ui/Button.astro";
+import { obterSessaoAtiva } from "~/shared/sessao";
+import { humanizarTitulo } from "~/server/alerta/render";
+
+export const prerender = false;
+
+const sessao = await obterSessaoAtiva(Astro.cookies);
+if (!sessao) return Astro.redirect("/entrar");
+
+// Sair: quando a action confirma, volta para a tela de entrada.
+const resultadoSair = Astro.getActionResult(actions.assinante.sair);
+if (resultadoSair && !resultadoSair.error) return Astro.redirect("/entrar");
+
+const resultadoSalvar = Astro.getActionResult(actions.keyword.salvar);
+if (resultadoSalvar && !resultadoSalvar.error) return Astro.redirect("/painel"); // PRG
+const erroTermo = isInputError(resultadoSalvar?.error)
+  ? resultadoSalvar.error.fields.termo?.[0]
+  : resultadoSalvar?.error?.message;
+
+const { db } = await import("~/server/db/cliente");
+const { listarDoAssinante: listarKeywords } = await import("~/server/db/repositorios/keywords");
+const { listarDoAssinante: listarAvisos } = await import("~/server/db/repositorios/alertas");
+const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
+
+const [termos, avisos, coleta] = await Promise.all([
+  listarKeywords(db, sessao.assinanteId),
+  listarAvisos(db, sessao.assinanteId),
+  ultimaColeta(db),
+]);
+
+const formatoData = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoHora = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+---
+
+<Base titulo="Seu painel — Edital Radar">
+  <main class="mx-auto max-w-2xl px-4 py-16">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="font-display text-3xl font-bold text-acento">Seus avisos</h1>
+        <p class="mt-1 text-suave">
+          {
+            coleta
+              ? `Última leitura do Diário: ${formatoData.format(coleta.executadoEm)} às ${formatoHora.format(coleta.executadoEm)}`
+              : "A gente lê o Diário Oficial de SP todo dia útil de manhã."
+          }
+        </p>
+      </div>
+      <form method="POST" action={actions.assinante.sair}>
+        <Button variante="fantasma">Sair</Button>
+      </form>
+    </header>
+
+    <Card class="mt-8">
+      <h2 class="font-display text-xl font-semibold">Termos vigiados</h2>
+      <p class="mt-1 text-sm text-suave">
+        Avisamos quando um deles aparecer no Diário Oficial. Vale nome da sua
+        ONG, sua causa, seu bairro.
+      </p>
+
+      {
+        termos.length > 0 && (
+          <ul class="mt-4 space-y-2">
+            {termos.map((t) => (
+              <li class="flex items-center justify-between gap-3 rounded-xl border border-borda px-4 py-2">
+                <span class="font-semibold">{t.termo}</span>
+                <form method="POST" action={actions.keyword.remover}>
+                  <input type="hidden" name="id" value={t.id} />
+                  <button
+                    type="submit"
+                    class="text-sm text-suave hover:text-erro"
+                    aria-label={`Parar de vigiar ${t.termo}`}
+                  >
+                    remover
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      <form method="POST" action={actions.keyword.salvar} class="mt-4 flex items-end gap-3">
+        <div class="grow">
+          <Field
+            name="termo"
+            label={termos.length === 0 ? "Comece com o nome da sua ONG" : "Vigiar outro termo"}
+            placeholder="ex.: chamamento público"
+            erro={erroTermo}
+          />
+        </div>
+        <Button>Vigiar</Button>
+      </form>
+    </Card>
+
+    <section class="mt-8">
+      <h2 class="font-display text-xl font-semibold">O que já encontramos</h2>
+      {
+        avisos.length === 0 ? (
+          <p class="mt-3 text-suave">
+            {termos.length === 0
+              ? "Você ainda não vigia nenhum termo. Cadastre um acima para começar."
+              : "Nada por enquanto. A gente lê o Diário todo dia útil e avisa assim que sair algo."}
+          </p>
+        ) : (
+          <ul class="mt-4 space-y-4">
+            {avisos.map((a) => (
+              <li class="rounded-card border border-borda bg-cartao p-5">
+                <p class="font-semibold">{humanizarTitulo(a.titulo)}</p>
+                <p class="mt-1 text-sm text-suave">{a.trecho}</p>
+                <p class="mt-2 text-sm text-suave">
+                  Você vigia: <strong class="text-tinta">{a.termo ?? "seu termo"}</strong>
+                  {" · "}
+                  <a class="text-acento hover:text-acento-forte" href={`https://www.doe.sp.gov.br/${a.slug}`}>
+                    ver publicação na fonte
+                  </a>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </section>
+
+    <p class="mt-10 text-xs text-suave">
+      O Edital Radar não substitui a leitura oficial. Sempre confira a
+      publicação na fonte antes de agir.
+    </p>
+  </main>
+</Base>

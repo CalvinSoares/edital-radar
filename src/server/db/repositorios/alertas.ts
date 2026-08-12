@@ -74,3 +74,23 @@ export async function marcarEnviados(db: typeof Db, alertaIds: string[]): Promis
   if (alertaIds.length === 0) return;
   await db.update(alerta).set({ enviadoEm: sql`now()` }).where(inArray(alerta.id, alertaIds));
 }
+
+/** Avisos do painel — mais recentes primeiro. */
+export async function listarDoAssinante(db: typeof Db, assinanteId: string, limite = 30) {
+  return db
+    .select({
+      id: alerta.id,
+      titulo: publicacao.titulo,
+      trecho: alerta.trecho,
+      termo: keyword.termo,
+      slug: publicacao.slug,
+      dataPublicacao: publicacao.dataPublicacao,
+      enviadoEm: alerta.enviadoEm,
+    })
+    .from(alerta)
+    .innerJoin(publicacao, eq(alerta.publicacaoId, publicacao.id))
+    .leftJoin(keyword, eq(alerta.keywordId, keyword.id))
+    .where(eq(alerta.assinanteId, assinanteId))
+    .orderBy(sql`${publicacao.dataPublicacao} desc`)
+    .limit(limite);
+}

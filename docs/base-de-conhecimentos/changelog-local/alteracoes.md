@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-08-12 — Magic-link, sessão e painel (primeiras Actions/páginas)
+
+- Schema: `login_token` (uso único atômico, 15 min) e `sessao` (30 dias,
+  cookie httpOnly `er_sessao`)
+- Actions (`src/actions/index.ts`): `assinante.cadastrar` (cria/reativa +
+  magic-link; resposta idêntica exista ou não), `assinante.sair`,
+  `keyword.salvar` (free máx 3, idempotente), `keyword.remover` (escopada
+  ao dono). Imports do banco tardios — dev sem DATABASE_URL não quebra
+- Páginas: `/entrar` (form + PRG), `/entrar/[token]` (consome link, 410 se
+  inválido), `/painel` (termos + avisos + última leitura + sair), landing
+  ganhou CTA real
+- Kit UI inicial em `src/components/ui/`: `Button`, `Field`, `Card`
+- `src/shared/sessao.ts`: ponte cookies ↔ sessão (mantém `src/server/`
+  livre de framework)
+- Verificado no dev server: landing CTA, /entrar 200 com form, /painel 302
+  → /entrar sem cookie, token inválido 410
+
 ## 2026-08-12 — Digest por e-mail + descadastro
 
 - `src/server/alerta/`: `selecionarDigests` (pura — 1 e-mail/assinante, máx

@@ -12,3 +12,24 @@ export async function listarKeywordsParaMatch(db: typeof Db): Promise<KeywordPar
     .where(and(isNull(assinante.suprimidoEm), isNull(assinante.descadastradoEm)));
   return rows;
 }
+
+export async function listarDoAssinante(db: typeof Db, assinanteId: string) {
+  return db
+    .select({ id: keyword.id, termo: keyword.termo, criadoEm: keyword.criadoEm })
+    .from(keyword)
+    .where(eq(keyword.assinanteId, assinanteId))
+    .orderBy(keyword.criadoEm);
+}
+
+/** Idempotente: termo repetido não duplica (UNIQUE) e não é erro. */
+export async function salvarKeyword(db: typeof Db, assinanteId: string, termo: string): Promise<void> {
+  await db
+    .insert(keyword)
+    .values({ assinanteId, termo: termo.trim() })
+    .onConflictDoNothing({ target: [keyword.assinanteId, keyword.termo] });
+}
+
+/** Escopada ao dono — ninguém remove keyword de outro assinante. */
+export async function removerKeyword(db: typeof Db, assinanteId: string, id: string): Promise<void> {
+  await db.delete(keyword).where(and(eq(keyword.id, id), eq(keyword.assinanteId, assinanteId)));
+}

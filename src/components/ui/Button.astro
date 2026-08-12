@@ -1,0 +1,21 @@
+---
+interface Props {
+  variante?: "primario" | "neutro" | "fantasma";
+  type?: "submit" | "button";
+  class?: string;
+}
+
+const { variante = "primario", type = "submit", class: extra = "" } = Astro.props;
+
+const base =
+  "inline-block rounded-xl px-5 py-2.5 font-semibold transition-colors disabled:opacity-60";
+const porVariante = {
+  primario: "bg-acento text-sobre-acento hover:bg-acento-forte",
+  neutro: "border border-borda bg-cartao text-tinta hover:border-acento",
+  fantasma: "text-acento hover:text-acento-forte",
+};
+---
+
+<button type={type} class={`${base} ${porVariante[variante]} ${extra}`}>
+  <slot />
+</button>

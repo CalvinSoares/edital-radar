@@ -81,6 +81,28 @@ export const alerta = pgTable(
   (t) => [uniqueIndex("alerta_assinante_publicacao_unique").on(t.assinanteId, t.publicacaoId)],
 );
 
+// Magic-link: token de uso único com validade curta. O próprio id é o token.
+export const loginToken = pgTable("login_token", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  assinanteId: uuid("assinante_id")
+    .notNull()
+    .references(() => assinante.id, { onDelete: "cascade" }),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+  usadoEm: timestamp("usado_em", { withTimezone: true }),
+});
+
+// Sessão de painel: o id vai no cookie (httpOnly).
+export const sessao = pgTable("sessao", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  assinanteId: uuid("assinante_id")
+    .notNull()
+    .references(() => assinante.id, { onDelete: "cascade" }),
+  criadaEm: timestamp("criada_em", { withTimezone: true }).notNull().defaultNow(),
+  expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+  revogadaEm: timestamp("revogada_em", { withTimezone: true }),
+});
+
 // Registro de cada execução do job — alimenta o "última leitura: hoje, 7h04"
 // da UI e a monitoração (0 coletados em dia útil = alarme).
 export const coletaExecucao = pgTable("coleta_execucao", {

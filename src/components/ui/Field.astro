@@ -1,0 +1,24 @@
+---
+interface Props {
+  name: string;
+  label: string;
+  type?: "text" | "email";
+  placeholder?: string;
+  erro?: string | undefined;
+  required?: boolean;
+}
+
+const { name, label, type = "text", placeholder, erro, required = true } = Astro.props;
+---
+
+<label class="block">
+  <span class="mb-1 block text-sm font-semibold text-tinta/70">{label}</span>
+  <input
+    name={name}
+    type={type}
+    placeholder={placeholder}
+    required={required}
+    class="w-full rounded-xl border border-borda bg-campo px-4 py-2.5 text-tinta outline-none focus:border-acento"
+  />
+  {erro && <span class="mt-1 block text-sm text-erro">{erro}</span>}
+</label>

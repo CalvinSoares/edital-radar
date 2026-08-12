@@ -4,8 +4,9 @@
 > **Mutations** acontecem via Astro Actions (`src/actions/index.ts`), input Zod.
 > **Endpoints** (`src/pages/api/`) só para o que não é página nem Action (cron, webhook).
 
-⚠️ **Estado: contratos planejados** — nada implementado ainda.
-Ao implementar, atualizar este arquivo com o contrato real e remover o ⚠️.
+**Estado (2026-08-12): implementado** — Actions em `src/actions/index.ts`,
+sessão por cookie httpOnly (`er_sessao`, 30 dias), magic-link de uso único
+(15 min). Repositórios de leitura em `src/server/db/repositorios/`.
 
 ---
 
@@ -19,26 +20,30 @@ Ao implementar, atualizar este arquivo com o contrato real e remover o ⚠️.
 
 ---
 
-## Leituras (repositórios) — fase Watch
+## Leituras (repositórios) — fase Watch ✔
 
 | Função | Contrato |
 |---|---|
-| `listarKeywords(assinanteId)` | → `{ id, termo, criadoEm }[]` |
-| `listarAvisos({ assinanteId, pagina, porPagina })` | → `{ itens, total }`. Item: `{ id, titulo, trecho, urlFonte, dataPublicacao, termoQueBateu, enviadoEm }` |
-| `detalheAviso({ assinanteId, id })` | → item + conteúdo completo, ou `null` (página faz 404) |
-| `ultimaColeta()` | → `{ dataAlvo, status, executadoEm }` — alimenta "última leitura: hoje, 7h04" |
+| `keywords.listarDoAssinante(db, assinanteId)` | → `{ id, termo, criadoEm }[]` |
+| `alertas.listarDoAssinante(db, assinanteId, limite=30)` | → `{ id, titulo, trecho, termo, slug, dataPublicacao, enviadoEm }[]` mais recentes primeiro |
+| `coleta.ultimaColeta(db)` | → execução mais recente — alimenta "última leitura" |
+| `auth.obterSessao(db, sessaoId)` | → `{ sessaoId, assinanteId, email, plano }` ou null (expirada/revogada) |
 
-## Mutations (Actions) — fase Watch
+Helper de página: `obterSessaoAtiva(Astro.cookies)` em `src/shared/sessao.ts`
+(shared porque toca tipo do Astro — `src/server/` fica livre de framework).
+
+## Mutations (Actions) — fase Watch ✔
 
 | Action | Contrato |
 |---|---|
-| `assinante.cadastrar` | `{ email }` → envia magic-link. Nunca revelar se o e-mail já existe |
-| `assinante.sair` | `{}` → encerra sessão |
-| `keyword.salvar` | `{ termo: string (3–80) }` — free: máx 3 (`LIMITE_DE_TERMOS`) |
-| `keyword.remover` | `{ id }` |
+| `assinante.cadastrar` | `{ email }` → cria/reativa assinante + envia magic-link. Resposta idêntica exista ou não (nunca revelar). Descadastrado que volta é reativado; suprimido por bounce NÃO |
+| `assinante.sair` | revoga sessão + apaga cookie |
+| `keyword.salvar` | `{ termo (3–80) }` — free: máx 3 (`LIMITE_DE_TERMOS`); termo repetido é idempotente |
+| `keyword.remover` | `{ id: uuid }` — escopada ao dono da sessão |
 
-Login por magic-link: o link do e-mail aponta para página SSR
-(`/entrar/[token]`) que valida, cria sessão e redireciona — não é Action.
+Fluxo magic-link (não é Action): `/entrar/[token]` (SSR) consome o token
+(uso único atômico, 15 min), cria sessão, seta cookie e redireciona ao
+painel. Token inválido/usado/expirado → **410** com CTA de pedir novo.
 
 ## Endpoints (`src/pages/api/`) — ✔ implementado
 
