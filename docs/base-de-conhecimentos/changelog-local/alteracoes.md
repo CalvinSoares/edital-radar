@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-08-12 — Cobertura full-text + criação de alertas
+
+- **Decisão revertida com medição**: a opção B (busca `Terms` da API) caiu —
+  a API é sensível a acento ("chamamento publico" acha 1 vs 13 do acentuado).
+  Implementada a opção A refinada: baixar o detalhe de TODAS as publicações
+  do dia e casar localmente (motor insensível a acento)
+- Prova: 13/13 vs gabarito da API em 11/08; custo medido ~25ms/detalhe →
+  ~10s/dia com concorrência 8 (`pipeline/provar-fulltext.ts`)
+- `casar-dia.ts` (match full-text, falha pontual não derruba o dia, >10% =
+  erro), `concorrencia.ts` (mapComLimite), `rodar.ts` (orquestra ingestão →
+  match → alertas → registro único)
+- Schema: `publicacao.content/brutoDetalhe/contentEm` (persistidos SÓ para
+  quem casou — ajuste consciente do invariante do bruto);
+  `alerta.campo/trecho` (rastreabilidade do e-mail)
+- Repositórios novos: `keywords.listarKeywordsParaMatch` (exclui suprimidos),
+  `alertas.criarAlertas` (dedup pelo UNIQUE), `publicacoes.salvarConteudos`
+- `/api/coleta` e CLI agora rodam a rodada completa; `maxDuration: 300`
+- 40 testes no total
+
 ## 2026-08-12 — Motor de match por keyword
 
 - `src/server/match/`: `casarKeywords` (pura) + `normalizarPreservandoIndices`

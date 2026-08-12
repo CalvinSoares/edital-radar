@@ -22,6 +22,11 @@ export const publicacao = pgTable(
     hierarchy: text("hierarchy"),
     publicationTypeId: text("publication_type_id"),
     bruto: jsonb("bruto").notNull(),
+    // Texto completo (HTML) — persistido só quando a publicação casou com
+    // alguma keyword; o match roda em memória durante o job.
+    content: text("content"),
+    brutoDetalhe: jsonb("bruto_detalhe"),
+    contentEm: timestamp("content_em", { withTimezone: true }),
     coletadoEm: timestamp("coletado_em", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("publicacao_slug_unique").on(t.slug)],
@@ -62,6 +67,9 @@ export const alerta = pgTable(
       .notNull()
       .references(() => publicacao.id, { onDelete: "cascade" }),
     keywordId: uuid("keyword_id").references(() => keyword.id, { onDelete: "set null" }),
+    // Rastreabilidade do e-mail: onde o termo apareceu e o trecho original.
+    campo: text("campo", { enum: ["titulo", "excerpt", "content"] }).notNull().default("excerpt"),
+    trecho: text("trecho").notNull().default(""),
     // Gravado na mesma transação do retorno do provedor de e-mail.
     enviadoEm: timestamp("enviado_em", { withTimezone: true }),
     criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),

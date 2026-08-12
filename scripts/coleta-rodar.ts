@@ -1,11 +1,11 @@
-// Roda a coleta localmente (CLI).
+// Roda a rodada diária localmente (CLI).
 //
 //   pnpm coleta:rodar -- --data=2026-08-11            # grava no banco (exige DATABASE_URL)
-//   pnpm coleta:rodar -- --data=2026-08-11 --dry-run  # só busca + valida + normaliza
+//   pnpm coleta:rodar -- --data=2026-08-11 --dry-run  # ingestão sem banco (match pulado sem keywords)
 //
 // Sem --data: hoje em America/Sao_Paulo.
 
-import { ingerirDia } from "../src/server/coleta/ingerir";
+import { rodarDia, type DepsDaRodada } from "../src/server/coleta/rodar";
 import { hojeEmSaoPaulo } from "../src/server/coleta/calendario";
 
 const args = new Map(
@@ -23,32 +23,45 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAlvo)) {
   process.exit(1);
 }
 
-let salvar = async () => {};
-let registrar = async () => {};
+let deps: DepsDaRodada;
 
-if (!dryRun) {
+if (dryRun) {
+  deps = {
+    salvarPublicacoes: async () => {},
+    listarKeywords: async () => [], // sem banco não há keywords — match é pulado
+    salvarConteudos: async () => {},
+    criarAlertas: async () => 0,
+    registrar: async () => {},
+  };
+} else {
   const { db } = await import("../src/server/db/cliente");
-  const { upsertPublicacoes } = await import("../src/server/db/repositorios/publicacoes");
+  const { upsertPublicacoes, salvarConteudos } = await import(
+    "../src/server/db/repositorios/publicacoes"
+  );
   const { registrarExecucao } = await import("../src/server/db/repositorios/coleta");
-  salvar = ((rows) => upsertPublicacoes(db, rows)) as typeof salvar;
-  registrar = ((r: Parameters<Parameters<typeof ingerirDia>[1]["registrar"]>[0]) =>
-    registrarExecucao(db, {
-      dataAlvo: r.dataAlvo,
-      status: r.status,
-      totalColetado: r.totalColetado,
-      totalCasado: 0,
-      totalEnviado: 0,
-      erro: r.erro,
-    })) as typeof registrar;
+  const { listarKeywordsParaMatch } = await import("../src/server/db/repositorios/keywords");
+  const { criarAlertas } = await import("../src/server/db/repositorios/alertas");
+
+  deps = {
+    salvarPublicacoes: (rows) => upsertPublicacoes(db, rows),
+    listarKeywords: () => listarKeywordsParaMatch(db),
+    salvarConteudos: (casadas) => salvarConteudos(db, casadas),
+    criarAlertas: (matches) => criarAlertas(db, matches),
+    registrar: (r) =>
+      registrarExecucao(db, {
+        dataAlvo: r.dataAlvo,
+        status: r.status,
+        totalColetado: r.totalColetado,
+        totalCasado: r.totalCasado,
+        totalEnviado: 0,
+        erro: r.erro,
+      }),
+  };
 }
 
-console.log(`Coleta ${dryRun ? "(dry-run) " : ""}para ${dataAlvo}…`);
+console.log(`Rodada ${dryRun ? "(dry-run) " : ""}para ${dataAlvo}…`);
 
-const resumo = await ingerirDia(dataAlvo, {
-  salvar,
-  registrar,
-  log: (m) => console.log(`  ${m}`),
-});
+const resumo = await rodarDia(dataAlvo, { ...deps, log: (m) => console.log(`  ${m}`) });
 
 console.log(JSON.stringify(resumo, null, 2));
 process.exit(resumo.status === "erro" ? 1 : 0);

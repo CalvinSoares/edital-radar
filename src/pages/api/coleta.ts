@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { ingerirDia } from "../../server/coleta/ingerir";
+import { rodarDia } from "../../server/coleta/rodar";
 import { hojeEmSaoPaulo } from "../../server/coleta/calendario";
 
 export const prerender = false;
@@ -22,21 +22,28 @@ async function executar(request: Request): Promise<Response> {
   // Import tardio: o cliente do banco exige DATABASE_URL e não deve derrubar
   // o build/prerender das páginas públicas.
   const { db } = await import("../../server/db/cliente");
-  const { upsertPublicacoes } = await import("../../server/db/repositorios/publicacoes");
+  const { upsertPublicacoes, salvarConteudos } = await import(
+    "../../server/db/repositorios/publicacoes"
+  );
   const { registrarExecucao } = await import("../../server/db/repositorios/coleta");
+  const { listarKeywordsParaMatch } = await import("../../server/db/repositorios/keywords");
+  const { criarAlertas } = await import("../../server/db/repositorios/alertas");
 
   const url = new URL(request.url);
   const dataAlvo = url.searchParams.get("data") ?? hojeEmSaoPaulo(new Date());
 
-  const resumo = await ingerirDia(dataAlvo, {
-    salvar: (rows) => upsertPublicacoes(db, rows),
+  const resumo = await rodarDia(dataAlvo, {
+    salvarPublicacoes: (rows) => upsertPublicacoes(db, rows),
+    listarKeywords: () => listarKeywordsParaMatch(db),
+    salvarConteudos: (casadas) => salvarConteudos(db, casadas),
+    criarAlertas: (matches) => criarAlertas(db, matches),
     registrar: (r) =>
       registrarExecucao(db, {
         dataAlvo: r.dataAlvo,
         status: r.status,
         totalColetado: r.totalColetado,
-        totalCasado: 0,
-        totalEnviado: 0,
+        totalCasado: r.totalCasado,
+        totalEnviado: 0, // envio de digest ainda não implementado
         erro: r.erro,
       }),
     log: (m) => console.error(`[coleta] ${m}`),

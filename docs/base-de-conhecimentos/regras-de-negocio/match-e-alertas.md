@@ -22,21 +22,34 @@
   keywords, saída lista de pares — sem I/O, sem Date, sem env
 - Regra nova só entra com caso em `fixtures/rotulados/match-keywords.json`
 
-### Limitação conhecida / decisão pendente (antes do digest)
+### Cobertura full-text — DECIDIDA e implementada (2026-08-12)
 
-Medido em 2026-08-12 (3.315 publicações reais): o match sobre
-`titulo + excerpt` acha **menos** que a busca full-text da própria API
-(9 × 11–24 hits/dia para "chamamento público") — o excerpt tem só ~330
-caracteres. Opções para fechar o gap:
+O match roda sobre o **texto completo** de toda publicação do dia
+(`casarDia` em `src/server/coleta/casar-dia.ts`):
 
-| Opção | Custo | Nota |
-|---|---|---|
-| A — Buscar `content` de toda publicação | ~3,3k requests/dia | Pesado, mas viável (~3 min) |
-| B — Uma busca `Terms` na API por termo único/dia + detalhe só dos hits | ~1 request por termo | **Recomendada** — barata e full-text; o job continua gravando tudo no banco |
-| C — Aceitar título+excerpt no v1 | zero | Subconta; ok só para beta fechado |
+- **Por que não usar a busca `Terms` da API** (era a recomendação B):
+  medição provou que ela é **sensível a acento** — "chamamento público" = 13
+  hits, "chamamento publico" = 1. Usuário digita sem acento; confiar na API
+  subcontaria. Só o motor local (insensível a acento) cumpre a promessa
+- **Prova de cobertura**: nos 13 hits do gabarito da API em 11/08, o motor
+  local com o termo SEM acento achou **13/13** (`pipeline/provar-fulltext.ts`)
+- **Custo medido**: ~25ms/detalhe com concorrência 8 → **~10s** para varrer
+  as ~3,3k publicações do dia. `maxDuration: 300` no adapter por folga
+- **Armazenamento**: o content é processado em memória e persistido
+  **apenas** para publicações que casaram (`salvarConteudos`); o trecho vai
+  no próprio alerta. Ajuste consciente do invariante do bruto: o bruto da
+  LISTAGEM é sempre gravado; o detalhe só de quem casou — re-rodar keyword
+  nova sobre dias antigos exige re-buscar detalhe (aceito e documentado)
+- Falha pontual de detalhe não derruba o dia; acima de 10% vira status
+  `erro` na execução
 
-Decidir antes de ligar o envio de e-mail — subcontar alerta quebra a promessa
-do produto.
+## Seleção — alertas ✔ (parcial)
+
+- `criarAlertas` insere um alerta por (assinante, publicação) com `campo` e
+  `trecho` — dedup pelo UNIQUE do banco (`onConflictDoNothing`)
+- Assinante suprimido nunca entra (filtro no `listarKeywordsParaMatch`)
+- ⚠️ Pendentes: digest (agrupar 10+ por e-mail), envio via Resend com
+  `enviado_em` na mesma transação, descadastro
 
 ## Seleção (o que vira e-mail)
 

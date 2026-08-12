@@ -1,7 +1,8 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { db as Db } from "../cliente";
 import { publicacao } from "../schema";
 import type { PublicacaoNormalizada } from "../../coleta/normalizar";
+import type { ResumoDoMatch } from "../../coleta/casar-dia";
 
 /**
  * UPSERT por slug (chave natural do DOE) — rodar o job duas vezes no mesmo
@@ -23,4 +24,14 @@ export async function upsertPublicacoes(db: typeof Db, rows: PublicacaoNormaliza
         bruto: sql`excluded.bruto`,
       },
     });
+}
+
+/** Persiste o texto completo — só das publicações que casaram com keyword. */
+export async function salvarConteudos(db: typeof Db, casadas: ResumoDoMatch["casadas"]): Promise<void> {
+  for (const c of casadas) {
+    await db
+      .update(publicacao)
+      .set({ content: c.content, brutoDetalhe: c.brutoDetalhe, contentEm: sql`now()` })
+      .where(eq(publicacao.slug, c.slug));
+  }
 }

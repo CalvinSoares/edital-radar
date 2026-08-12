@@ -30,8 +30,18 @@ export const PaginaDeBuscaSchema = z
   })
   .passthrough();
 
+export const DetalheDePublicacaoSchema = z
+  .object({
+    slug: z.string().min(1),
+    title: z.string(),
+    date: z.string().min(10),
+    content: z.string().nullish(),
+  })
+  .passthrough();
+
 export type ItemDeBusca = z.infer<typeof ItemDeBuscaSchema>;
 export type PaginaDeBusca = z.infer<typeof PaginaDeBuscaSchema>;
+export type DetalheDePublicacao = z.infer<typeof DetalheDePublicacaoSchema>;
 
 async function comRetentativa<T>(fn: () => Promise<T>, tentativas = 3, baseMs = 500): Promise<T> {
   let ultimoErro: unknown;
@@ -69,5 +79,18 @@ export async function buscarPaginaDoDia(
     const json: unknown = await res.json();
     // Falha alto se o contrato mudou — nunca gravar dado meia-boca.
     return PaginaDeBuscaSchema.parse(json);
+  });
+}
+
+/** Texto completo (HTML) de uma publicação. */
+export async function buscarDetalhe(slug: string): Promise<DetalheDePublicacao> {
+  const url = `${API}/publications/${slug}`;
+  return comRetentativa(async () => {
+    const res = await fetch(url, {
+      headers: { Accept: "application/json", "User-Agent": USER_AGENT },
+    });
+    if (!res.ok) throw new Error(`DOE respondeu HTTP ${res.status} em ${url}`);
+    const json: unknown = await res.json();
+    return DetalheDePublicacaoSchema.parse(json);
   });
 }

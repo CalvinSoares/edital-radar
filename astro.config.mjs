@@ -7,7 +7,8 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   // SSR por padrão; páginas públicas marcam `export const prerender = true`.
   output: "server",
-  adapter: vercel(),
+  // maxDuration alto por causa do /api/coleta: ~3,3k detalhes do DOE por dia.
+  adapter: vercel({ maxDuration: 300 }),
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],

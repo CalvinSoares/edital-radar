@@ -15,11 +15,14 @@ cron (dia útil, ~6h30 America/Sao_Paulo)      → vercel.json: 30 9 * * 1-5 (UT
   └─ 1. Buscar publicações do dia (paginado, PageSize=100)   ✔ cliente-doe.ts
      2. Validar cada página com Zod ── falhou? → falha alto   ✔ (schema no cliente)
      3. Gravar bruto + normalizado (UPSERT por slug)          ✔ ingerir.ts + repositório
-     4. Rodar match (função pura) contra keywords/perfis      ⚠️ próximo
-     5. Selecionar alertas (dedup por UNIQUE, limites)        ⚠️
-     6. Enviar e-mails (~7h), enviado_em na mesma transação   ⚠️
-     7. Registrar execução em coleta_execucao                 ✔ sempre, inclusive em erro
+     4. Match FULL-TEXT (baixa detalhe de tudo, casa local)   ✔ casar-dia.ts (~10s p/ 3,3k)
+     5. Criar alertas (dedup por UNIQUE, campo + trecho)      ✔ repositorios/alertas.ts
+     6. Enviar e-mails (~7h), enviado_em na mesma transação   ⚠️ próximo
+     7. Registrar execução em coleta_execucao                 ✔ rodar.ts — uma vez, com totais
 ```
+
+Orquestração: `src/server/coleta/rodar.ts` (`rodarDia`) encadeia 1→5 e 7 com
+deps injetadas. Endpoint e CLI só montam as deps reais.
 
 ## Arquivos
 
