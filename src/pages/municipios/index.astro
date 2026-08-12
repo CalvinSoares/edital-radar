@@ -1,0 +1,67 @@
+---
+import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
+import Card from "~/components/ui/Card.astro";
+
+export const prerender = false;
+
+const { db } = await import("~/server/db/cliente");
+const { listarMunicipiosComTemas } = await import("~/server/db/repositorios/municipios");
+const municipios = await listarMunicipiosComTemas(db, 30, 80);
+
+Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600");
+---
+
+<Base
+  titulo="O que saiu no Diário Oficial de SP por município | Edital Radar"
+  descricao="Publicações de chamamento, fomento e credenciamento no Diário Oficial de São Paulo, organizadas por município."
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Municípios no Diário Oficial de SP",
+    description:
+      "Chamamentos e fomento no Diário Oficial de São Paulo, por município.",
+    isPartOf: { "@type": "WebSite", name: "Edital Radar" },
+  }}
+>
+  <SiteHeader ativo="municipios" />
+  <main class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
+    <h1 class="er-rise font-display text-3xl font-bold tracking-tight text-ink md:text-5xl">
+      Por município
+    </h1>
+    <p class="er-rise er-rise-delay-1 mt-4 max-w-xl text-suave">
+      Só o que saiu nos últimos 30 dias no caderno municipal — pra quem acompanha
+      a cidade onde atua.
+    </p>
+
+    {
+      municipios.length === 0 ? (
+        <Card class="mt-10">
+          <p class="font-semibold">Nada municipal no período</p>
+          <p class="mt-1 text-suave">
+            Volte amanhã ou veja
+            <a href="/temas" class="font-medium text-tinta underline decoration-acento decoration-2 underline-offset-4">
+              por tema
+            </a>.
+          </p>
+        </Card>
+      ) : (
+        <ul class="mt-10 space-y-2">
+          {municipios.map((m) => (
+            <li>
+              <a
+                href={`/municipios/${m.slug}`}
+                class="er-card er-lift flex items-baseline justify-between gap-3 no-underline"
+              >
+                <span class="font-display text-lg font-bold tracking-tight text-ink">{m.nome}</span>
+                <span class="shrink-0 rounded-sm bg-campo px-2 py-0.5 text-xs font-semibold tabular-nums text-suave">
+                  {m.total} · 30d
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</Base>

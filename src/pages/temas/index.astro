@@ -1,0 +1,71 @@
+---
+import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
+import Card from "~/components/ui/Card.astro";
+import { CATALOGO_DE_TEMAS } from "~/server/match/temas";
+
+export const prerender = false;
+
+const { db } = await import("~/server/db/cliente");
+const { contarPorTema } = await import("~/server/db/repositorios/temas");
+const totais = await contarPorTema(db, 30);
+
+Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600");
+---
+
+<Base
+  titulo="O que saiu no Diário Oficial de SP para ONGs — por tema | Edital Radar"
+  descricao="Chamamentos públicos, termos de fomento e colaboração publicados no Diário Oficial de São Paulo, organizados por tema e atualizados todo dia útil."
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Temas do Diário Oficial de SP para ONGs",
+    description:
+      "Chamamentos, fomento e colaboração no Diário Oficial de São Paulo, por tema.",
+    isPartOf: { "@type": "WebSite", name: "Edital Radar" },
+  }}
+>
+  <SiteHeader ativo="temas" />
+  <main class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
+    <h1 class="er-rise font-display text-3xl font-bold tracking-tight text-ink md:text-5xl">
+      O que saiu no Diário, por tema
+    </h1>
+    <p class="er-rise er-rise-delay-1 mt-4 max-w-xl text-suave">
+      Todo dia útil a gente passa pelas ~3 mil publicações e separa o que interessa
+      pra quem toca projeto social.
+    </p>
+
+    <div class="mt-10 space-y-3">
+      {
+        CATALOGO_DE_TEMAS.map((tema) => (
+          <a href={`/temas/${tema.slug}`} class="block">
+            <Card lift>
+              <div class="flex items-baseline justify-between gap-3">
+                <h2 class="font-display text-xl font-bold tracking-tight text-ink">{tema.nome}</h2>
+                <span class="shrink-0 rounded-sm bg-campo px-2 py-0.5 text-xs font-semibold tabular-nums text-suave">
+                  {totais.get(tema.slug) ?? 0} · 30d
+                </span>
+              </div>
+              <p class="mt-1.5 text-sm leading-relaxed text-suave">{tema.descricao}</p>
+            </Card>
+          </a>
+        ))
+      }
+    </div>
+
+    <Card class="mt-10 bg-acento-suave">
+      <p class="font-display text-lg font-bold tracking-tight text-ink">
+        Quer isso no e-mail, só do que importa pra você?
+      </p>
+      <p class="mt-1 text-sm text-suave">
+        Cadastre o nome da ONG, a causa ou o bairro — grátis, avisa por e-mail.
+      </p>
+      <a
+        href="/entrar"
+        class="mt-5 inline-block rounded-sm bg-acento px-5 py-2.5 font-semibold text-sobre-acento transition-colors hover:bg-acento-forte"
+      >
+        Quero receber no e-mail
+      </a>
+    </Card>
+  </main>
+</Base>

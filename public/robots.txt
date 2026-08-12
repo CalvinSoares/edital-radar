@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /painel
+Disallow: /entrar
+Disallow: /descadastrar/
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://editalradar.com.br/sitemap.xml

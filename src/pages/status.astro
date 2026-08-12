@@ -1,0 +1,91 @@
+---
+import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
+import Card from "~/components/ui/Card.astro";
+
+export const prerender = false;
+
+const { db } = await import("~/server/db/cliente");
+const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
+const coleta = await ultimaColeta(db);
+
+const formatoData = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoHora = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const rotuloStatus: Record<string, string> = {
+  ok: "Leitura ok",
+  sem_edicao: "Sem edição (fim de semana ou feriado)",
+  erro: "Com problema — estamos olhando",
+};
+
+Astro.response.headers.set("Cache-Control", "public, max-age=60, s-maxage=120");
+---
+
+<Base
+  titulo="Status da leitura do Diário — Edital Radar"
+  descricao="Quando o Edital Radar leu o Diário Oficial de SP pela última vez. Rodamos todo dia útil de manhã."
+>
+  <SiteHeader ativo="status" />
+  <main class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
+    <h1 class="er-rise font-display text-3xl font-bold tracking-tight text-ink md:text-5xl">
+      Status da leitura
+    </h1>
+    <p class="er-rise er-rise-delay-1 mt-4 max-w-xl text-suave">
+      Promessa nossa: lemos o Diário Oficial de SP todo dia útil de manhã.
+      Aqui você confere se a última rodada rolou.
+    </p>
+
+    <Card class="er-rise er-rise-delay-2 mt-10">
+      {
+        coleta ? (
+          <>
+            <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-suave">
+              <span
+                class:list={[
+                  "inline-block size-2 shrink-0 rounded-full",
+                  coleta.status === "ok" ? "er-dot-live bg-acento" : "bg-suave",
+                ]}
+                aria-hidden="true"
+              />
+              Última leitura
+            </p>
+            <p class="font-display mt-3 text-3xl font-bold tracking-tight text-ink">
+              {formatoData.format(coleta.executadoEm)}
+              <span class="text-suave"> às </span>
+              {formatoHora.format(coleta.executadoEm)}
+            </p>
+            <p class="mt-4 text-suave">
+              Dia do Diário: <strong class="text-tinta">{coleta.dataAlvo}</strong>
+              {" · "}
+              {rotuloStatus[coleta.status] ?? coleta.status}
+            </p>
+            <p class="mt-2 text-sm text-suave">
+              {coleta.totalColetado} publicações lidas
+              {coleta.totalCasado > 0 ? ` · ${coleta.totalCasado} combinações` : ""}
+              {coleta.totalEnviado > 0 ? ` · ${coleta.totalEnviado} avisos enviados` : ""}
+            </p>
+            {coleta.status === "erro" && coleta.erro && (
+              <p class="mt-4 text-sm text-erro">Detalhe interno registrado — a equipe foi avisada.</p>
+            )}
+          </>
+        ) : (
+          <>
+            <p class="font-semibold">Ainda não rodamos em produção</p>
+            <p class="mt-1 text-suave">
+              Assim que o job diário rodar pela primeira vez, a data aparece aqui.
+            </p>
+          </>
+        )
+      }
+    </Card>
+  </main>
+</Base>
