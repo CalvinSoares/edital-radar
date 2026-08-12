@@ -65,7 +65,7 @@ describe("casarDia", () => {
     expect(resumo.matches.map((m) => m.slug)).toEqual(["b"]); // casou no título
   });
 
-  it("sem keywords não busca nada", async () => {
+  it("sem keywords nem temas não busca nada", async () => {
     let chamadas = 0;
     const resumo = await casarDia({
       publicacoes,
@@ -79,13 +79,49 @@ describe("casarDia", () => {
     expect(resumo.totalVarrido).toBe(0);
   });
 
+  it("classifica temas na mesma passada, sem duplicar por termo", async () => {
+    const resumo = await casarDia({
+      publicacoes,
+      keywords: [],
+      temas: [
+        // dois termos do mesmo tema casando a mesma publicação → 1 par só
+        { slug: "fomento", nome: "Fomento", descricao: "", termos: ["termo de fomento", "edital de fomento"] },
+        { slug: "colaboracao", nome: "Colaboração", descricao: "", termos: ["termo de colaboração"] },
+      ],
+      buscarDetalhe: async (slug) =>
+        detalheFake(
+          slug,
+          slug === "a" ? "assinado o TERMO DE FOMENTO via edital de fomento nº 3" : "nada",
+        ),
+    });
+    expect(resumo.temasCasados).toEqual([{ pubSlug: "a", tema: "fomento" }]);
+    expect(resumo.matches).toHaveLength(0); // tema não vira alerta de assinante
+    expect(resumo.casadas).toHaveLength(0); // tema não persiste content
+  });
+
   it("content persiste apenas para quem casou", async () => {
     const resumo = await casarDia({
       publicacoes,
-      keywords: [kw("1", "extrato")],
+      keywords: [kw("1", "aviso")],
       buscarDetalhe: async (slug) => detalheFake(slug, `conteúdo de ${slug}`),
     });
-    expect(resumo.casadas.map((c) => c.slug)).toEqual(["c"]);
-    expect(resumo.casadas[0]!.content).toBe("conteúdo de c");
+    // "a" tem título AVISO QUALQUER — casa e persiste; extrato (c) não casa "aviso"
+    expect(resumo.casadas.map((c) => c.slug)).toEqual(["a"]);
+    expect(resumo.casadas[0]!.content).toBe("conteúdo de a");
+  });
+
+  it("extrato/resultado NÃO viram alerta, mas temas SEO ainda classificam", async () => {
+    const pubs: PublicacaoDoDia[] = [
+      { slug: "x", titulo: "RESULTADO FINAL DO CHAMAMENTO PÚBLICO", excerpt: null },
+      { slug: "y", titulo: "EDITAL PARA CHAMAMENTO PÚBLICO Nº 1", excerpt: null },
+    ];
+    const resumo = await casarDia({
+      publicacoes: pubs,
+      keywords: [kw("1", "chamamento publico")],
+      temas: [{ slug: "chamamento-publico", nome: "C", descricao: "", termos: ["chamamento público"] }],
+      buscarDetalhe: async (slug) => detalheFake(slug, "texto com chamamento público"),
+    });
+    expect(resumo.matches.map((m) => m.slug)).toEqual(["y"]);
+    expect(resumo.temasCasados.map((t) => t.pubSlug).sort()).toEqual(["x", "y"]);
   });
 });

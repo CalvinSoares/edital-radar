@@ -29,12 +29,17 @@ export type CampoDeMatch = "titulo" | "excerpt" | "content";
 
 export type ResultadoDeMatch = {
   assinanteId: string;
-  keywordId: string;
+  /** Null quando o match veio do perfil Radar (sem keyword). */
+  keywordId: string | null;
   termo: string;
   slug: string;
   campo: CampoDeMatch;
   /** Trecho do texto ORIGINAL ao redor da ocorrência, para o e-mail. */
   trecho: string;
+  origem?: "keyword" | "perfil";
+  resumo?: string | null;
+  prazoEm?: Date | null;
+  prazoTrecho?: string | null;
 };
 
 const TRECHO_ANTES = 80;

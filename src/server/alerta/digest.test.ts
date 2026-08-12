@@ -61,9 +61,9 @@ describe("render", () => {
     ]);
     const email = renderizarDigest(digest!, "2026-08-12", "https://editalradar.com.br");
 
-    expect(email.assunto).toBe("2 publicações com seus termos — Diário Oficial de SP, 12/08");
+    expect(email.assunto).toBe("2 publicações que você acompanha — Diário Oficial de SP, 12/08");
     expect(email.html).toContain("https://www.doe.sp.gov.br/executivo/secretaria/edital-14");
-    expect(email.html).toContain("Você vigia:");
+    expect(email.html).toContain("Combinou com:");
     expect(email.html).toContain("não substitui a leitura oficial");
     expect(email.html).toContain("/descadastrar/11111111-1111-1111-1111-111111111111");
     expect(email.texto).toContain("Descadastrar:");

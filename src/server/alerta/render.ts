@@ -51,17 +51,22 @@ const DISCLAIMER =
 export function renderizarDigest(digest: Digest, dataAlvo: string, siteUrl: string): EmailRenderizado {
   const n = digest.avisos.length + digest.excedente;
   const plural = n === 1 ? "publicação" : "publicações";
-  const assunto = `${n} ${plural} com seus termos — Diário Oficial de SP, ${dataCurta(dataAlvo)}`;
+  const assunto = `${n} ${plural} que você acompanha — Diário Oficial de SP, ${dataCurta(dataAlvo)}`;
   const urlDescadastro = `${siteUrl}/descadastrar/${digest.descadastroToken}`;
 
   const blocosHtml = digest.avisos
     .map((a) => {
       const urlFonte = `https://www.doe.sp.gov.br/${a.slug}`;
+      const ehRet = a.tipo === "retificacao";
+      const rotulo = ehRet
+        ? "Retificação de um edital que avisamos"
+        : `Combinou com: <strong>${escaparHtml(a.termo)}</strong>`;
       return `
-      <div style="margin:0 0 20px 0;padding:14px 16px;border:1px solid #e3e1da;border-radius:10px;">
+      <div style="margin:0 0 20px 0;padding:14px 16px;border:1px solid #e3e1da;border-radius:10px;${ehRet ? "background:#f7fafc;" : ""}">
+        ${ehRet ? `<p style="margin:0 0 6px 0;font-size:12px;font-weight:bold;color:#c45c26;text-transform:uppercase;letter-spacing:0.06em;">Retificação</p>` : ""}
         <p style="margin:0 0 6px 0;font-size:16px;font-weight:bold;color:#1a2433;">${escaparHtml(humanizarTitulo(a.titulo))}</p>
-        <p style="margin:0 0 8px 0;font-size:14px;color:#4a5261;line-height:1.5;">${destacarTermo(a.trecho, a.termo)}</p>
-        <p style="margin:0;font-size:13px;color:#6d7482;">Você vigia: <strong>${escaparHtml(a.termo)}</strong> · <a href="${urlFonte}" style="color:#2456c9;">ver publicação na fonte</a></p>
+        <p style="margin:0 0 8px 0;font-size:14px;color:#4a5261;line-height:1.5;">${ehRet ? escaparHtml(a.trecho) : destacarTermo(a.trecho, a.termo)}</p>
+        <p style="margin:0;font-size:13px;color:#6d7482;">${rotulo} · <a href="${urlFonte}" style="color:#2456c9;">ver publicação na fonte</a></p>
       </div>`;
     })
     .join("\n");
@@ -85,7 +90,7 @@ export function renderizarDigest(digest: Digest, dataAlvo: string, siteUrl: stri
   const blocosTexto = digest.avisos
     .map(
       (a) =>
-        `• ${humanizarTitulo(a.titulo)}\n  ${a.trecho}\n  Você vigia: ${a.termo}\n  Fonte: https://www.doe.sp.gov.br/${a.slug}`,
+        `• ${humanizarTitulo(a.titulo)}\n  ${a.trecho}\n  Combinou com: ${a.termo}\n  Fonte: https://www.doe.sp.gov.br/${a.slug}`,
     )
     .join("\n\n");
   const texto = [

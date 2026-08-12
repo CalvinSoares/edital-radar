@@ -40,7 +40,7 @@ export type SessaoAtiva = {
   sessaoId: string;
   assinanteId: string;
   email: string;
-  plano: "free" | "radar";
+  plano: "free" | "radar" | "federacao";
 };
 
 export async function obterSessao(db: typeof Db, sessaoId: string): Promise<SessaoAtiva | null> {
@@ -53,9 +53,40 @@ export async function obterSessao(db: typeof Db, sessaoId: string): Promise<Sess
     })
     .from(sessao)
     .innerJoin(assinante, eq(sessao.assinanteId, assinante.id))
-    .where(and(eq(sessao.id, sessaoId), isNull(sessao.revogadaEm), gt(sessao.expiraEm, sql`now()`)))
+    .where(
+      and(
+        eq(sessao.id, sessaoId),
+        isNull(sessao.revogadaEm),
+        gt(sessao.expiraEm, sql`now()`),
+        isNull(assinante.suprimidoEm),
+        isNull(assinante.descadastradoEm),
+      ),
+    )
     .limit(1);
   return ativa ?? null;
+}
+
+/** Dados mínimos para o admin “ver como” (inclui inativos — só leitura). */
+export async function obterAssinanteParaVista(
+  db: typeof Db,
+  assinanteId: string,
+): Promise<SessaoAtiva | null> {
+  const [row] = await db
+    .select({
+      assinanteId: assinante.id,
+      email: assinante.email,
+      plano: assinante.plano,
+    })
+    .from(assinante)
+    .where(eq(assinante.id, assinanteId))
+    .limit(1);
+  if (!row) return null;
+  return {
+    sessaoId: "vista-admin",
+    assinanteId: row.assinanteId,
+    email: row.email,
+    plano: row.plano,
+  };
 }
 
 export async function revogarSessao(db: typeof Db, sessaoId: string): Promise<void> {

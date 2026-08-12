@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { rodarDia } from "../../server/coleta/rodar";
 import { hojeEmSaoPaulo } from "../../server/coleta/calendario";
+import { igualComTempoConstante } from "../../server/seguranca/crypto-admin";
 
 export const prerender = false;
 
@@ -11,7 +12,10 @@ function autorizado(request: Request): boolean {
   if (!secret) return false;
   const bearer = request.headers.get("authorization");
   const header = request.headers.get("x-coleta-secret");
-  return bearer === `Bearer ${secret}` || header === secret;
+  const token =
+    bearer?.startsWith("Bearer ") ? bearer.slice("Bearer ".length) : header;
+  if (!token) return false;
+  return igualComTempoConstante(token, secret);
 }
 
 async function executar(request: Request): Promise<Response> {
@@ -32,30 +36,77 @@ async function executar(request: Request): Promise<Response> {
   );
   const { enviarDigests } = await import("../../server/alerta/enviar-digests");
   const { criarClienteDeEmail } = await import("../../server/alerta/resend");
+  const { salvarTemas } = await import("../../server/db/repositorios/temas");
 
   const url = new URL(request.url);
   const dataAlvo = url.searchParams.get("data") ?? hojeEmSaoPaulo(new Date());
   const log = (m: string) => console.error(`[coleta] ${m}`);
 
+  const clienteEmail = criarClienteDeEmail({
+    apiKey: import.meta.env.RESEND_API_KEY,
+    modo: import.meta.env.RESEND_MODE,
+    remetente: import.meta.env.EMAIL_REMETENTE ?? "Edital Radar <avisos@editalradar.com.br>",
+    log,
+  });
+  const siteUrl = import.meta.env.SITE_URL ?? "http://localhost:4321";
+  const alarmePara = import.meta.env.ALARME_EMAIL;
+
   const resumo = await rodarDia(dataAlvo, {
     salvarPublicacoes: (rows) => upsertPublicacoes(db, rows),
     listarKeywords: () => listarKeywordsParaMatch(db),
+    listarPerfis: async () => {
+      const { listarPerfisParaMatch } = await import("../../server/db/repositorios/perfil");
+      return listarPerfisParaMatch(db);
+    },
     salvarConteudos: (casadas) => salvarConteudos(db, casadas),
     criarAlertas: (matches) => criarAlertas(db, matches),
-    enviarDigests: () =>
-      enviarDigests({
+    salvarTemas: (pares) => salvarTemas(db, pares),
+    criarAlertasRetificacao: async (pubs) => {
+      const { criarAlertasDeRetificacao } = await import(
+        "../../server/db/repositorios/retificacao"
+      );
+      return criarAlertasDeRetificacao(db, pubs);
+    },
+    enviarDigests: async () => {
+      const normal = await enviarDigests({
         listarPendentes: () => listarPendentesParaDigest(db),
         marcarEnviados: (ids) => marcarEnviados(db, ids),
-        cliente: criarClienteDeEmail({
-          apiKey: import.meta.env.RESEND_API_KEY,
-          modo: import.meta.env.RESEND_MODE,
-          remetente: import.meta.env.EMAIL_REMETENTE ?? "Edital Radar <avisos@editalradar.com.br>",
-          log,
-        }),
+        cliente: clienteEmail,
         dataAlvo,
-        siteUrl: import.meta.env.SITE_URL ?? "http://localhost:4321",
+        siteUrl,
         log,
-      }),
+      });
+      const { enviarDigestsVazios } = await import("../../server/alerta/digest-vazio");
+      const { listarCandidatosDigestVazio, registrarDigestVazio } = await import(
+        "../../server/db/repositorios/digest-vazio"
+      );
+      const vazios = await enviarDigestsVazios({
+        listarCandidatos: () => listarCandidatosDigestVazio(db, dataAlvo),
+        registrarEnvio: (id, sem) => registrarDigestVazio(db, id, sem),
+        cliente: clienteEmail,
+        dataAlvo,
+        siteUrl,
+        log,
+      });
+      return {
+        emails: normal.emails + vazios.emails,
+        alertasEnviados: normal.alertasEnviados,
+        falhas: normal.falhas + vazios.falhas,
+      };
+    },
+    notificarAlarme: async (msg) => {
+      if (!alarmePara) {
+        log(`alarme sem ALARME_EMAIL: ${msg.assunto}`);
+        return;
+      }
+      await clienteEmail.enviar({
+        para: alarmePara,
+        assunto: msg.assunto,
+        html: msg.html,
+        texto: msg.texto,
+        urlDescadastro: siteUrl,
+      });
+    },
     registrar: (r) =>
       registrarExecucao(db, {
         dataAlvo: r.dataAlvo,

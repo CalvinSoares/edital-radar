@@ -13,6 +13,7 @@ export type AlertaPendente = {
   trecho: string;
   slug: string;
   dataPublicacao: Date;
+  tipo?: "oportunidade" | "retificacao";
 };
 
 export type Digest = {

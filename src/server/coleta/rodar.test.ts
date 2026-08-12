@@ -29,8 +29,10 @@ function depsBase(sobrescrever: Partial<DepsDaRodada> = {}): DepsDaRodada & {
     registros,
     salvarPublicacoes: async () => {},
     listarKeywords: async () => [{ id: "kw", assinanteId: "as", termo: "publicação" }],
+    listarPerfis: async () => [],
     salvarConteudos: async () => {},
     criarAlertas: async (matches) => matches.length,
+    salvarTemas: async (pares) => pares.length,
     enviarDigests: async () => ({ emails: 1, alertasEnviados: 2, falhas: 0 }),
     registrar: async (r) => void registros.push(r),
     buscarPagina: async () => paginaComItens(["a", "b"]),
@@ -84,11 +86,27 @@ describe("rodarDia", () => {
     expect(deps.registros).toHaveLength(1);
   });
 
-  it("sem keywords: match pulado, mas execução registrada", async () => {
-    const deps = depsBase({ listarKeywords: async () => [] });
+  it("sem keywords: nenhum alerta, mas os TEMAS ainda são classificados", async () => {
+    let temasRecebidos = 0;
+    const deps = depsBase({
+      listarKeywords: async () => [],
+      salvarTemas: async (pares) => {
+        temasRecebidos = pares.length;
+        return pares.length;
+      },
+      // título com "credenciamento" casa o tema do catálogo real
+      buscarDetalhe: async (slug) => ({
+        slug,
+        title: "ABERTURA DE CREDENCIAMENTO",
+        date: "2026-08-11T01:00:00",
+        content: "abertura de credenciamento de organizações",
+      }),
+    });
     const resumo = await rodarDia("2026-08-11", deps);
     expect(resumo.status).toBe("ok");
     expect(resumo.totalCasado).toBe(0);
+    expect(temasRecebidos).toBeGreaterThan(0); // páginas SEO não dependem de assinante
+    expect(resumo.temasClassificados).toBe(temasRecebidos);
     expect(deps.registros).toHaveLength(1);
   });
 
@@ -120,5 +138,30 @@ describe("rodarDia", () => {
     const resumo = await rodarDia("2026-08-09", deps);
     expect(resumo.status).toBe("sem_edicao");
     expect(resumo.totalCasado).toBe(0);
+  });
+
+  it("status erro dispara notificarAlarme", async () => {
+    const alarmes: string[] = [];
+    const deps = depsBase({
+      buscarPagina: async () => paginaComItens([]),
+      notificarAlarme: async (msg) => void alarmes.push(msg.assunto),
+    });
+    // 2026-08-12 é quarta — 0 pubs = erro
+    const resumo = await rodarDia("2026-08-12", deps);
+    expect(resumo.status).toBe("erro");
+    expect(alarmes).toHaveLength(1);
+    expect(alarmes[0]).toContain("2026-08-12");
+  });
+
+  it("sem_edicao NÃO dispara alarme", async () => {
+    let chamado = false;
+    const deps = depsBase({
+      buscarPagina: async () => paginaComItens([]),
+      notificarAlarme: async () => {
+        chamado = true;
+      },
+    });
+    await rodarDia("2026-08-09", deps);
+    expect(chamado).toBe(false);
   });
 });

@@ -4,10 +4,13 @@
 
 import { ingerirDia } from "./ingerir";
 import { casarDia } from "./casar-dia";
+import { precisaAlarme, renderizarAlarme } from "./alarme";
+import { CATALOGO_DE_TEMAS } from "../match/temas";
 import type { buscarPaginaDoDia, buscarDetalhe } from "./cliente-doe";
 import type { PublicacaoNormalizada } from "./normalizar";
 import type { StatusDaColeta } from "./calendario";
 import type { KeywordParaMatch, ResultadoDeMatch } from "../match/casar-keywords";
+import type { PerfilParaMatch } from "../match/casar-perfil";
 import type { ResumoDoMatch } from "./casar-dia";
 import type { ResumoDoEnvio } from "../alerta/enviar-digests";
 
@@ -20,6 +23,8 @@ export type ResumoDaRodada = {
   totalColetado: number;
   totalCasado: number;
   alertasCriados: number;
+  temasClassificados: number;
+  retificacoesCriadas: number;
   falhasDeDetalhe: number;
   emailsEnviados: number;
   alertasEnviados: number;
@@ -30,11 +35,27 @@ export type ResumoDaRodada = {
 export type DepsDaRodada = {
   salvarPublicacoes: (rows: PublicacaoNormalizada[]) => Promise<void>;
   listarKeywords: () => Promise<KeywordParaMatch[]>;
+  /** Perfis Radar ativos (pode ser lista vazia). */
+  listarPerfis: () => Promise<PerfilParaMatch[]>;
   salvarConteudos: (casadas: ResumoDoMatch["casadas"]) => Promise<void>;
   /** Insere alertas (dedup pelo UNIQUE do banco); devolve quantos entraram. */
   criarAlertas: (matches: ResultadoDeMatch[]) => Promise<number>;
+  /** Persiste a classificação por tema (páginas SEO); devolve quantos entraram. */
+  salvarTemas: (pares: { pubSlug: string; tema: string }[]) => Promise<number>;
+  /**
+   * Avisos de retificação vinculados a alertas anteriores.
+   * Opcional: se ausente, só o match normal roda.
+   */
+  criarAlertasRetificacao?: (
+    pubs: { slug: string; titulo: string; hierarchy: string | null }[],
+  ) => Promise<number>;
   /** Envia os digests pendentes (inclui restos de dias com falha de envio). */
   enviarDigests: () => Promise<ResumoDoEnvio>;
+  /**
+   * Notificação interna quando a rodada falha (0 pubs em dia útil, etc.).
+   * Opcional: sem ela, só o registro + HTTP 500 do cron ficam.
+   */
+  notificarAlarme?: (msg: { assunto: string; texto: string; html: string }) => Promise<void>;
   registrar: (resumo: ResumoDaRodada) => Promise<void>;
   buscarPagina?: typeof buscarPaginaDoDia;
   buscarDetalhe?: typeof buscarDetalhe;
@@ -58,35 +79,49 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
 
   let totalCasado = 0;
   let alertasCriados = 0;
+  let temasClassificados = 0;
+  let retificacoesCriadas = 0;
   let falhasDeDetalhe = 0;
   let envio: ResumoDoEnvio = { emails: 0, alertasEnviados: 0, falhas: 0 };
   let erro = ingestao.erro;
 
-  // 2. Match full-text + 3. alertas — só se a ingestão rendeu algo.
+  // 2. Match full-text (keywords + temas) + 3. alertas — só se a ingestão rendeu algo.
   if (!erro && ingestao.totalColetado > 0) {
     try {
       const keywords = await deps.listarKeywords();
-      if (keywords.length > 0) {
-        const resumoDoMatch = await casarDia({
-          publicacoes: publicacoesDoDia.map((p) => ({
+      const perfis = await deps.listarPerfis();
+      const resumoDoMatch = await casarDia({
+        publicacoes: publicacoesDoDia.map((p) => ({
+          slug: p.slug,
+          titulo: p.titulo,
+          excerpt: p.excerpt,
+          hierarchy: p.hierarchy,
+        })),
+        keywords,
+        temas: CATALOGO_DE_TEMAS,
+        perfis,
+        buscarDetalhe: deps.buscarDetalhe,
+        log,
+      });
+      totalCasado = resumoDoMatch.matches.length;
+      falhasDeDetalhe = resumoDoMatch.totalComFalhaDeDetalhe;
+      await deps.salvarConteudos(resumoDoMatch.casadas);
+      alertasCriados = await deps.criarAlertas(resumoDoMatch.matches);
+      temasClassificados = await deps.salvarTemas(resumoDoMatch.temasCasados);
+
+      if (deps.criarAlertasRetificacao) {
+        retificacoesCriadas = await deps.criarAlertasRetificacao(
+          publicacoesDoDia.map((p) => ({
             slug: p.slug,
             titulo: p.titulo,
-            excerpt: p.excerpt,
+            hierarchy: p.hierarchy,
           })),
-          keywords,
-          buscarDetalhe: deps.buscarDetalhe,
-          log,
-        });
-        totalCasado = resumoDoMatch.matches.length;
-        falhasDeDetalhe = resumoDoMatch.totalComFalhaDeDetalhe;
-        await deps.salvarConteudos(resumoDoMatch.casadas);
-        alertasCriados = await deps.criarAlertas(resumoDoMatch.matches);
+        );
+        alertasCriados += retificacoesCriadas;
+      }
 
-        if (falhasDeDetalhe / ingestao.totalColetado > LIMITE_DE_FALHAS_DE_DETALHE) {
-          erro = `${falhasDeDetalhe} de ${ingestao.totalColetado} detalhes falharam — acima do limite`;
-        }
-      } else {
-        log("nenhuma keyword ativa — fase de match pulada");
+      if (falhasDeDetalhe / ingestao.totalColetado > LIMITE_DE_FALHAS_DE_DETALHE) {
+        erro = `${falhasDeDetalhe} de ${ingestao.totalColetado} detalhes falharam — acima do limite`;
       }
     } catch (e) {
       erro = e instanceof Error ? e.message : String(e);
@@ -113,6 +148,8 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
     totalColetado: ingestao.totalColetado,
     totalCasado,
     alertasCriados,
+    temasClassificados,
+    retificacoesCriadas,
     falhasDeDetalhe,
     emailsEnviados: envio.emails,
     alertasEnviados: envio.alertasEnviados,
@@ -121,5 +158,18 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
   };
 
   await deps.registrar(resumo);
+
+  if (precisaAlarme(resumo)) {
+    const msg = renderizarAlarme(resumo);
+    log(`ALARME: ${msg.assunto} — ${resumo.erro}`);
+    if (deps.notificarAlarme) {
+      try {
+        await deps.notificarAlarme(msg);
+      } catch (e) {
+        log(`falha ao notificar alarme: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+
   return resumo;
 }

@@ -3,8 +3,14 @@
 
 import type { AstroCookies } from "astro";
 import type { SessaoAtiva } from "~/server/db/repositorios/auth";
+import { idVistaAdmin } from "./vista";
 
 export const COOKIE_DE_SESSAO = "er_sessao";
+
+export type ContextoPainel = SessaoAtiva & {
+  /** True = admin vendo como assinante (somente leitura). */
+  vistaAdmin: boolean;
+};
 
 export function opcoesDoCookie() {
   return {
@@ -22,4 +28,32 @@ export async function obterSessaoAtiva(cookies: AstroCookies): Promise<SessaoAti
   const { db } = await import("~/server/db/cliente");
   const { obterSessao } = await import("~/server/db/repositorios/auth");
   return obterSessao(db, sessaoId);
+}
+
+/**
+ * Sessão real OU vista admin (cookie er_vista + admin autenticado).
+ * Preferência: vista admin, para o backoffice inspecionar o painel.
+ */
+export async function obterContextoPainel(
+  cookies: AstroCookies,
+): Promise<ContextoPainel | null> {
+  const vistaId = idVistaAdmin(cookies);
+  if (vistaId) {
+    const { db } = await import("~/server/db/cliente");
+    const { obterAssinanteParaVista } = await import("~/server/db/repositorios/auth");
+    const info = await obterAssinanteParaVista(db, vistaId);
+    if (info) {
+      return {
+        sessaoId: "vista-admin",
+        assinanteId: info.assinanteId,
+        email: info.email,
+        plano: info.plano,
+        vistaAdmin: true,
+      };
+    }
+  }
+
+  const sessao = await obterSessaoAtiva(cookies);
+  if (!sessao) return null;
+  return { ...sessao, vistaAdmin: false };
 }
