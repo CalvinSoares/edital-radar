@@ -1,0 +1,70 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import Card from "~/components/ui/Card.astro";
+import { adminAutenticado } from "~/shared/admin";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const { db } = await import("~/server/db/cliente");
+const { resumoAdmin } = await import("~/server/db/repositorios/admin");
+const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
+const [resumo, coleta] = await Promise.all([resumoAdmin(db), ultimaColeta(db)]);
+
+const formato = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const cards = [
+  { label: "Assinantes ativos", valor: resumo.assinantesAtivos },
+  { label: "Suprimidos", valor: resumo.assinantesSuprimidos },
+  { label: "Descadastrados", valor: resumo.assinantesDescadastrados },
+  { label: "Assuntos acompanhados", valor: resumo.termosVigiados },
+  { label: "Alertas pendentes", valor: resumo.alertasPendentes },
+  { label: "Feedbacks irrelevantes", valor: resumo.feedbacksIrrelevantes },
+];
+---
+
+<Admin titulo="Resumo" ativo="inicio">
+  <p class="mt-2 text-suave">
+    {
+      coleta
+        ? `Última coleta: ${coleta.dataAlvo} · ${coleta.status} · ${formato.format(coleta.executadoEm)} · ${coleta.totalColetado} pubs`
+        : "Nenhuma coleta registrada ainda."
+    }
+  </p>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      cards.map((c) => (
+        <Card>
+          <p class="text-sm text-suave">{c.label}</p>
+          <p class="font-display mt-1 text-3xl font-semibold text-acento">{c.valor}</p>
+        </Card>
+      ))
+    }
+  </div>
+
+  <p class="mt-10 text-sm text-suave">
+    <a href="/admin/piloto" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">Piloto</a>
+    {" · "}
+    <a href="/admin/assinantes" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">Ver assinantes</a>
+    {" · "}
+    <a href="/admin/coletas" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">Ver coletas</a>
+    {" · "}
+    <a href="/admin/feedbacks" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">Ver feedbacks</a>
+    {" · "}
+    <a href="/admin/federacoes" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">Ver federações</a>
+  </p>
+</Admin>

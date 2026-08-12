@@ -1,0 +1,28 @@
+---
+import { actions } from "astro:actions";
+
+interface Props {
+  email: string;
+}
+
+const { email } = Astro.props;
+---
+
+<div class="border-b border-peach/40 bg-ink text-sobre-acento" role="status">
+  <div class="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-sm">
+    <p>
+      <strong class="font-semibold text-peach">Vista admin</strong>
+      — painel de
+      <span class="font-semibold">{email}</span>
+      (somente leitura).
+    </p>
+    <form method="POST" action={actions.admin.sairDaVista}>
+      <button
+        type="submit"
+        class="cursor-pointer rounded-sm border border-peach/60 px-3 py-1 font-semibold text-peach transition-colors hover:bg-peach/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peach"
+      >
+        Sair da vista
+      </button>
+    </form>
+  </div>
+</div>

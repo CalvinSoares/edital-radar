@@ -1,0 +1,138 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import Card from "~/components/ui/Card.astro";
+import { adminAutenticado } from "~/shared/admin";
+import { humanizarTitulo } from "~/server/alerta/render";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const revisado = Astro.getActionResult(actions.admin.revisarFeedback);
+if (revisado && !revisado.error) return Astro.redirect("/admin/feedbacks");
+
+const verTodos = Astro.url.searchParams.get("todos") === "1";
+
+const { db } = await import("~/server/db/cliente");
+const { listarFeedbacksAdmin } = await import("~/server/db/repositorios/admin");
+const lista = await listarFeedbacksAdmin(db, { limite: 50, soPendentes: !verTodos });
+
+const formato = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const rotulos = {
+  falso_positivo_filtro: "Falso positivo → fixture BLOQUEIOS",
+  termo_ruim: "Termo ruim do assinante",
+  catalogo: "Ajuste de catálogo Radar/SEO",
+  descartado: "Ruído aceitável / descartar",
+} as const;
+---
+
+<Admin titulo="Feedbacks" ativo="feedbacks">
+  <p class="mt-2 text-suave">
+    Classifique cada “não era pra mim”. Depois: se for falso positivo, adicione
+    caso em <code>fixtures/rotulados/</code> antes de mudar regra.
+  </p>
+  <p class="mt-2 text-sm">
+    {
+      verTodos ? (
+        <a href="/admin/feedbacks" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+          Só pendentes
+        </a>
+      ) : (
+        <a href="/admin/feedbacks?todos=1" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+          Ver também revisados
+        </a>
+      )
+    }
+  </p>
+
+  {
+    lista.length === 0 ? (
+      <p class="mt-8 text-suave">Nenhum feedback pendente.</p>
+    ) : (
+      <ul class="mt-6 space-y-4">
+        {lista.map((f) => (
+          <li class="rounded-card border border-borda bg-cartao p-5">
+            <p class="font-semibold">{humanizarTitulo(f.titulo)}</p>
+            <p class="mt-1 text-sm text-suave">{f.trecho}</p>
+            <p class="mt-2 text-sm text-suave">
+              {f.email}
+              {" · termo: "}
+              <strong class="text-tinta">{f.termo ?? "—"}</strong>
+              {" · "}
+              {f.irrelevanteEm ? formato.format(f.irrelevanteEm) : ""}
+              {" · "}
+              <a
+                class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
+                href={`https://www.doe.sp.gov.br/${f.slug}`}
+              >
+                fonte
+              </a>
+            </p>
+            {
+              f.feedbackRevisao ? (
+                <p class="mt-3 text-sm text-acento">
+                  Revisado: {rotulos[f.feedbackRevisao as keyof typeof rotulos] ?? f.feedbackRevisao}
+                </p>
+              ) : (
+                <div class="mt-4 flex flex-wrap gap-2">
+                  {(
+                    [
+                      "falso_positivo_filtro",
+                      "termo_ruim",
+                      "catalogo",
+                      "descartado",
+                    ] as const
+                  ).map((rev) => (
+                    <form method="POST" action={actions.admin.revisarFeedback}>
+                      <input type="hidden" name="id" value={f.alertaId} />
+                      <input type="hidden" name="revisao" value={rev} />
+                      <button
+                        type="submit"
+                        class="rounded-lg border border-borda px-3 py-1.5 text-xs text-tinta hover:border-acento"
+                      >
+                        {rotulos[rev]}
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              )
+            }
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <Card class="mt-10">
+    <h2 class="font-display text-lg font-semibold">Como afinar a regra</h2>
+    <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-suave">
+      <li>Marque o motivo acima (sai da fila pendente).</li>
+      <li>
+        Se <strong class="text-tinta">falso positivo</strong>: copie o título para
+        <code class="text-tinta">fixtures/rotulados/oportunidade-aberta.json</code>
+        com <code>aberta: false</code> e só então ajuste <code>BLOQUEIOS</code>.
+      </li>
+      <li>
+        Se <strong class="text-tinta">termo ruim</strong>: oriente o assinante no
+        painel (ou remova o termo no admin de assinantes).
+      </li>
+      <li>
+        Se <strong class="text-tinta">catálogo</strong>: revise causas/regiões em
+        <code>perfil-catalogo.ts</code> / temas SEO.
+      </li>
+    </ol>
+  </Card>
+</Admin>

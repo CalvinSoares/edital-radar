@@ -1,0 +1,68 @@
+---
+import { actions } from "astro:actions";
+import Base from "~/layouts/Base.astro";
+import BrandMark from "~/components/BrandMark.astro";
+
+interface Props {
+  titulo: string;
+  ativo: "inicio" | "assinantes" | "coletas" | "feedbacks" | "federacoes" | "piloto";
+}
+
+const { titulo, ativo } = Astro.props;
+const nav = [
+  { href: "/admin", id: "inicio" as const, label: "Resumo" },
+  { href: "/admin/piloto", id: "piloto" as const, label: "Piloto" },
+  { href: "/admin/assinantes", id: "assinantes" as const, label: "Assinantes" },
+  { href: "/admin/coletas", id: "coletas" as const, label: "Coletas" },
+  { href: "/admin/feedbacks", id: "feedbacks" as const, label: "Feedbacks" },
+  { href: "/admin/federacoes", id: "federacoes" as const, label: "Federações" },
+];
+---
+
+<Base titulo={`${titulo} — Admin · Edital Radar`} indexavel={false}>
+  <div class="min-h-screen">
+    <header class="er-site-header">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div class="flex flex-wrap items-center gap-4">
+          <a
+            href="/admin"
+            class="flex items-center gap-2 text-tinta no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            <BrandMark />
+            <span class="er-brand text-base">Admin</span>
+          </a>
+          <nav class="flex flex-wrap gap-1 text-sm" aria-label="Admin">
+            {
+              nav.map((n) => (
+                <a
+                  href={n.href}
+                  class:list={[
+                    "rounded-sm px-2.5 py-1.5 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
+                    n.id === ativo
+                      ? "bg-ink text-sobre-acento"
+                      : "text-slate hover:bg-campo hover:text-tinta",
+                  ]}
+                  aria-current={n.id === ativo ? "page" : undefined}
+                >
+                  {n.label}
+                </a>
+              ))
+            }
+          </nav>
+        </div>
+        <form method="POST" action={actions.admin.sair}>
+          <button
+            type="submit"
+            class="cursor-pointer text-sm font-medium text-slate transition-colors hover:text-erro"
+          >
+            Sair
+          </button>
+        </form>
+      </div>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-10">
+      <h1 class="font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">{titulo}</h1>
+      <slot />
+    </main>
+  </div>
+</Base>

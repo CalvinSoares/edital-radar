@@ -1,0 +1,65 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import Card from "~/components/ui/Card.astro";
+import { adminAutenticado } from "~/shared/admin";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const { db } = await import("~/server/db/cliente");
+const { metricasPiloto } = await import("~/server/db/repositorios/admin");
+const m = await metricasPiloto(db);
+
+const taxaRetorno =
+  m.assinantesAtivos > 0
+    ? Math.round((m.voltaramEm7d / m.assinantesAtivos) * 100)
+    : 0;
+
+const cards = [
+  { label: "Assinantes ativos", valor: String(m.assinantesAtivos) },
+  { label: "Voltaram em 7 dias (sessão)", valor: `${m.voltaramEm7d} (${taxaRetorno}%)` },
+  { label: "Alertas enviados (7d)", valor: String(m.alertasEnviados7d) },
+  { label: "Feedbacks pendentes", valor: String(m.feedbacksPendentes) },
+  { label: "Planos Radar/Federação", valor: String(m.planosRadar) },
+];
+---
+
+<Admin titulo="Piloto" ativo="piloto">
+  <p class="mt-2 text-suave">
+    Painel operacional do piloto com ONGs/federações — precisão (feedbacks) e
+    se voltam (sessões). Guia completo em
+    <code>docs/base-de-conhecimentos/piloto.md</code>.
+  </p>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      cards.map((c) => (
+        <Card>
+          <p class="text-sm text-suave">{c.label}</p>
+          <p class="font-display mt-1 text-2xl font-bold text-acento">{c.valor}</p>
+        </Card>
+      ))
+    }
+  </div>
+
+  <Card class="mt-10">
+    <h2 class="font-display text-lg font-semibold">Checklist do piloto</h2>
+    <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-suave">
+      <li>Convide 5–15 ONGs (e-mail magic-link) + 1 federação piloto se houver.</li>
+      <li>Ative Radar manualmente no admin para quem for testar perfil.</li>
+      <li>
+        Toda sexta: olhar taxa “voltaram em 7d” e fila de
+        <a href="/admin/feedbacks" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">feedbacks</a>.
+      </li>
+      <li>Falso positivo → fixture + regra; nunca mudar BLOQUEIOS no feeling.</li>
+      <li>Peça que usem “Serve pra mim?” no aviso — mede retenção pós-alerta.</li>
+    </ol>
+  </Card>
+</Admin>

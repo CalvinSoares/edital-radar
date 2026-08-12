@@ -1,0 +1,79 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import Card from "~/components/ui/Card.astro";
+import Field from "~/components/ui/Field.astro";
+import Button from "~/components/ui/Button.astro";
+import { adminAutenticado } from "~/shared/admin";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const criado = Astro.getActionResult(actions.admin.criarFederacao);
+if (criado && !criado.error) return Astro.redirect("/admin/federacoes?ok=1");
+const erro = criado?.error?.message;
+const ok = Astro.url.searchParams.get("ok") === "1";
+
+const { db } = await import("~/server/db/cliente");
+const { listarFederacoesAdmin } = await import("~/server/db/repositorios/federacao");
+const lista = await listarFederacoesAdmin(db);
+
+const formato = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+});
+---
+
+<Admin titulo="Federações" ativo="federacoes">
+  <p class="mt-2 text-suave">
+    <strong class="text-tinta">Sem Stripe, pra que serve?</strong> Só como ferramenta
+    interna do piloto: você libera de uma vez vários acessos Radar para uma rede
+    (CONDECA, COMAS…). Cada ONG recebe convite e usa o próprio painel. Não é
+    produto cobrado ainda — e a coordenadora comum não vê isso no free.
+  </p>
+
+  {
+    ok && <p class="mt-4 text-sm text-acento">Federação criada.</p>
+  }
+
+  <Card class="mt-8">
+    <h2 class="font-display text-lg font-semibold">Nova federação</h2>
+    <form method="POST" action={actions.admin.criarFederacao} class="mt-4 grid gap-4 sm:grid-cols-2">
+      <Field name="nome" label="Nome da rede" required />
+      <Field name="adminEmail" label="E-mail do admin" type="email" required />
+      <Field name="assentos" label="Assentos (inclui admin)" type="number" min={1} max={500} required />
+      {erro && <p class="text-sm text-erro sm:col-span-2">{erro}</p>}
+      <div class="sm:col-span-2">
+        <Button>Criar</Button>
+      </div>
+    </form>
+  </Card>
+
+  <div class="mt-10 space-y-3">
+    {
+      lista.length === 0 ? (
+        <p class="text-suave">Nenhuma federação ainda.</p>
+      ) : (
+        lista.map((f) => (
+          <Card>
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <p class="font-display text-lg font-semibold">{f.nome}</p>
+              <p class="text-sm text-suave">
+                {f.usados}/{f.assentos} assentos · desde {formato.format(f.criadoEm)}
+              </p>
+            </div>
+            <p class="mt-1 text-sm text-suave">Admin: {f.adminEmail}</p>
+          </Card>
+        ))
+      )
+    }
+  </div>
+</Admin>

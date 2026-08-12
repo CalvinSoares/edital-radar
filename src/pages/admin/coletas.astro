@@ -1,0 +1,71 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import { adminAutenticado } from "~/shared/admin";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const { db } = await import("~/server/db/cliente");
+const { listarColetasAdmin } = await import("~/server/db/repositorios/admin");
+const lista = await listarColetasAdmin(db, 40);
+
+const formato = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const corStatus: Record<string, string> = {
+  ok: "text-acento",
+  sem_edicao: "text-suave",
+  erro: "text-erro",
+};
+---
+
+<Admin titulo="Coletas" ativo="coletas">
+  {
+    lista.length === 0 ? (
+      <p class="mt-8 text-suave">Nenhuma execução registrada.</p>
+    ) : (
+      <div class="mt-6 overflow-x-auto er-card-quiet">
+        <table class="w-full min-w-[720px] text-left text-sm">
+          <thead class="border-b border-borda text-suave">
+            <tr>
+              <th class="px-4 py-3 font-semibold">Quando</th>
+              <th class="px-4 py-3 font-semibold">Dia alvo</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold">Coletado</th>
+              <th class="px-4 py-3 font-semibold">Casado</th>
+              <th class="px-4 py-3 font-semibold">Enviado</th>
+              <th class="px-4 py-3 font-semibold">Erro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((c) => (
+              <tr class="border-b border-borda last:border-0">
+                <td class="px-4 py-3 text-suave">{formato.format(c.executadoEm)}</td>
+                <td class="px-4 py-3 font-medium">{c.dataAlvo}</td>
+                <td class={`px-4 py-3 ${corStatus[c.status] ?? ""}`}>{c.status}</td>
+                <td class="px-4 py-3">{c.totalColetado}</td>
+                <td class="px-4 py-3">{c.totalCasado}</td>
+                <td class="px-4 py-3">{c.totalEnviado}</td>
+                <td class="max-w-xs truncate px-4 py-3 text-suave" title={c.erro ?? undefined}>
+                  {c.erro ?? "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</Admin>

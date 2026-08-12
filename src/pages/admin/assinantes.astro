@@ -1,0 +1,114 @@
+---
+import { actions } from "astro:actions";
+import Admin from "~/layouts/Admin.astro";
+import { adminAutenticado } from "~/shared/admin";
+
+export const prerender = false;
+
+const saiu = Astro.getActionResult(actions.admin.sair);
+if (saiu && !saiu.error) return Astro.redirect("/admin/entrar");
+const verComo = Astro.getActionResult(actions.admin.verComo);
+if (verComo && !verComo.error) return Astro.redirect("/painel");
+const promovido = Astro.getActionResult(actions.admin.promoverRadar);
+if (promovido && !promovido.error) return Astro.redirect("/admin/assinantes");
+const suprimiu = Astro.getActionResult(actions.admin.suprimir);
+if (suprimiu && !suprimiu.error) return Astro.redirect("/admin/assinantes");
+
+if (!adminAutenticado(Astro.cookies)) {
+  return Astro.redirect("/admin/entrar");
+}
+
+const busca = Astro.url.searchParams.get("q") ?? "";
+const { db } = await import("~/server/db/cliente");
+const { listarAssinantesAdmin } = await import("~/server/db/repositorios/admin");
+const lista = await listarAssinantesAdmin(db, { busca: busca || undefined });
+
+const formato = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const corStatus: Record<string, string> = {
+  ativo: "text-acento",
+  descadastrado: "text-suave",
+  suprimido: "text-erro",
+};
+---
+
+<Admin titulo="Assinantes" ativo="assinantes">
+  <form method="GET" class="mt-6 flex gap-2">
+    <input
+      name="q"
+      value={busca}
+      placeholder="buscar e-mail"
+      class="grow rounded-sm border border-borda bg-campo px-4 py-2.5 outline-none transition-[border-color,box-shadow] focus:border-acento focus:ring-2 focus:ring-acento/25"
+    />
+    <button type="submit" class="rounded-sm bg-acento px-5 py-2.5 font-semibold text-sobre-acento transition-colors hover:bg-acento-forte">
+      Buscar
+    </button>
+  </form>
+
+  {
+    lista.length === 0 ? (
+      <p class="mt-8 text-suave">Nenhum assinante encontrado.</p>
+    ) : (
+      <div class="mt-6 overflow-x-auto er-card-quiet">
+        <table class="w-full min-w-[640px] text-left text-sm">
+          <thead class="border-b border-borda text-suave">
+            <tr>
+              <th class="px-4 py-3 font-semibold">E-mail</th>
+              <th class="px-4 py-3 font-semibold">Plano</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold">Termos</th>
+              <th class="px-4 py-3 font-semibold">Alertas</th>
+              <th class="px-4 py-3 font-semibold">Desde</th>
+              <th class="px-4 py-3 font-semibold" />
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((a) => (
+              <tr class="border-b border-borda last:border-0">
+                <td class="px-4 py-3 font-medium">{a.email}</td>
+                <td class="px-4 py-3">{a.plano}</td>
+                <td class={`px-4 py-3 capitalize ${corStatus[a.status]}`}>{a.status}</td>
+                <td class="px-4 py-3 text-suave">
+                  {a.termos.length === 0 ? "—" : a.termos.join(", ")}
+                </td>
+                <td class="px-4 py-3">{a.totalAlertas}</td>
+                <td class="px-4 py-3 text-suave">{formato.format(a.criadoEm)}</td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex flex-col items-end gap-1">
+                    <form method="POST" action={actions.admin.verComo}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <button type="submit" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink" title="Abrir painel como este assinante (somente leitura)">
+                          ver
+                        </button>
+                      </form>
+                    {a.plano === "free" && a.status === "ativo" && (
+                      <form method="POST" action={actions.admin.promoverRadar}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <button type="submit" class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+                          → Radar
+                        </button>
+                      </form>
+                    )}
+                    {a.status !== "suprimido" && (
+                      <form method="POST" action={actions.admin.suprimir}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <button type="submit" class="text-suave hover:text-erro" title="Suprimir permanentemente">
+                          suprimir
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</Admin>
