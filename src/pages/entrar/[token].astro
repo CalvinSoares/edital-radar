@@ -23,14 +23,15 @@ Astro.response.status = 410; // link inválido, usado ou expirado
 
 <Base titulo="Link expirado — Edital Radar">
   <main class="mx-auto max-w-md px-4 py-24 text-center">
-    <h1 class="font-display text-3xl font-bold text-acento">Esse link não vale mais</h1>
+    <p class="er-brand text-lg text-ink">Edital Radar</p>
+    <h1 class="font-display mt-4 text-3xl font-bold tracking-tight text-ink">Esse link não vale mais</h1>
     <p class="mt-4 text-suave">
-      Links de acesso valem 15 minutos e funcionam uma única vez. Peça um novo
-      — leva segundos.
+      Links de acesso valem 15 minutos e só funcionam uma vez. Pede outro —
+      leva segundos.
     </p>
     <a
       href="/entrar"
-      class="mt-8 inline-block rounded-xl bg-acento px-5 py-2.5 font-semibold text-sobre-acento hover:bg-acento-forte"
+      class="mt-8 inline-block rounded-sm bg-acento px-5 py-2.5 font-semibold text-sobre-acento transition-colors hover:bg-acento-forte"
     >
       Pedir novo link
     </a>

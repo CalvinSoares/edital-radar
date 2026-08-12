@@ -1,37 +1,88 @@
 ---
 import { actions, isInputError } from "astro:actions";
 import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
 import Card from "~/components/ui/Card.astro";
 import Field from "~/components/ui/Field.astro";
 import Button from "~/components/ui/Button.astro";
-import { obterSessaoAtiva } from "~/shared/sessao";
+import { obterContextoPainel } from "~/shared/sessao";
+import VistaAdminBar from "~/components/VistaAdminBar.astro";
+import { sugestoesDeTermos } from "~/server/match/sugestoes-termos";
+import {
+  CATALOGO_DE_CAUSAS,
+  CATALOGO_DE_REGIOES,
+  LIMITE_ASSUNTOS_POR_ASSINANTE,
+} from "~/server/match/perfil-catalogo";
 import { humanizarTitulo } from "~/server/alerta/render";
+import { prazoUrgente } from "~/server/match/prazo";
 
 export const prerender = false;
 
-const sessao = await obterSessaoAtiva(Astro.cookies);
+const sessao = await obterContextoPainel(Astro.cookies);
 if (!sessao) return Astro.redirect("/entrar");
 
-// Sair: quando a action confirma, volta para a tela de entrada.
 const resultadoSair = Astro.getActionResult(actions.assinante.sair);
-if (resultadoSair && !resultadoSair.error) return Astro.redirect("/entrar");
+if (resultadoSair && !resultadoSair.error) {
+  return Astro.redirect(sessao.vistaAdmin ? "/admin/assinantes" : "/entrar");
+}
+const resultadoSairVista = Astro.getActionResult(actions.admin.sairDaVista);
+if (resultadoSairVista && !resultadoSairVista.error) {
+  return Astro.redirect("/admin/assinantes");
+}
 
 const resultadoSalvar = Astro.getActionResult(actions.keyword.salvar);
-if (resultadoSalvar && !resultadoSalvar.error) return Astro.redirect("/painel"); // PRG
+if (resultadoSalvar && !resultadoSalvar.error) return Astro.redirect("/painel");
 const erroTermo = isInputError(resultadoSalvar?.error)
   ? resultadoSalvar.error.fields.termo?.[0]
   : resultadoSalvar?.error?.message;
+
+const resultadoPerfil = Astro.getActionResult(actions.perfil.salvar);
+if (resultadoPerfil && !resultadoPerfil.error) return Astro.redirect("/painel");
+const erroPerfil = resultadoPerfil?.error?.message;
+
+const resultadoIrrelevante = Astro.getActionResult(actions.alerta.marcarIrrelevante);
+if (resultadoIrrelevante && !resultadoIrrelevante.error) {
+  const p = Astro.url.searchParams.get("pagina") ?? "1";
+  return Astro.redirect(p === "1" ? "/painel" : `/painel?pagina=${p}`);
+}
+
+const resultadoSalvarAviso = Astro.getActionResult(actions.alerta.salvar);
+if (resultadoSalvarAviso && !resultadoSalvarAviso.error) {
+  const p = Astro.url.searchParams.get("pagina") ?? "1";
+  return Astro.redirect(p === "1" ? "/painel" : `/painel?pagina=${p}`);
+}
+
+const pagina = Math.max(Number(Astro.url.searchParams.get("pagina") ?? "1") || 1, 1);
+const limiteAssuntos = LIMITE_ASSUNTOS_POR_ASSINANTE;
 
 const { db } = await import("~/server/db/cliente");
 const { listarDoAssinante: listarKeywords } = await import("~/server/db/repositorios/keywords");
 const { listarDoAssinante: listarAvisos } = await import("~/server/db/repositorios/alertas");
 const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
+const { obterPerfil } = await import("~/server/db/repositorios/perfil");
+const { idsSalvosDeAlertas } = await import("~/server/db/repositorios/salvos");
 
-const [termos, avisos, coleta] = await Promise.all([
+const [termos, historico, coleta, perfil] = await Promise.all([
   listarKeywords(db, sessao.assinanteId),
-  listarAvisos(db, sessao.assinanteId),
+  listarAvisos(db, sessao.assinanteId, { pagina, porPagina: 20 }),
   ultimaColeta(db),
+  obterPerfil(db, sessao.assinanteId),
 ]);
+
+const salvosIds = await idsSalvosDeAlertas(
+  db,
+  sessao.assinanteId,
+  historico.itens.map((a) => a.id),
+);
+
+const sugestoes =
+  termos.length < limiteAssuntos ? sugestoesDeTermos(termos.map((t) => t.termo), 6) : [];
+const causasSelecionadas = new Set(perfil?.causas ?? []);
+const regioesSelecionadas = new Set(perfil?.regioes ?? []);
+const agora = new Date();
+
+const { itens: avisos, total, porPagina } = historico;
+const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
 
 const formatoData = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -43,45 +94,81 @@ const formatoHora = new Intl.DateTimeFormat("pt-BR", {
   minute: "2-digit",
   timeZone: "America/Sao_Paulo",
 });
+const formatoDia = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "long",
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+const porDia = new Map<string, typeof avisos>();
+for (const a of avisos) {
+  const dia = formatoDia.format(a.dataPublicacao);
+  porDia.set(dia, [...(porDia.get(dia) ?? []), a]);
+}
 ---
 
 <Base titulo="Seu painel — Edital Radar">
-  <main class="mx-auto max-w-2xl px-4 py-16">
-    <header class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="font-display text-3xl font-bold text-acento">Seus avisos</h1>
-        <p class="mt-1 text-suave">
-          {
-            coleta
-              ? `Última leitura do Diário: ${formatoData.format(coleta.executadoEm)} às ${formatoHora.format(coleta.executadoEm)}`
-              : "A gente lê o Diário Oficial de SP todo dia útil de manhã."
-          }
-        </p>
-      </div>
-      <form method="POST" action={actions.assinante.sair}>
-        <Button variante="fantasma">Sair</Button>
-      </form>
+  {sessao.vistaAdmin && <VistaAdminBar email={sessao.email} />}
+  <SiteHeader ativo="painel" compacto>
+    <form slot="acoes" method="POST" action={actions.assinante.sair}>
+      <Button variante="fantasma" type="submit">Sair</Button>
+    </form>
+  </SiteHeader>
+  <main class="mx-auto max-w-2xl px-4 py-10 md:py-14">
+    <header>
+      <h1 class="font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">Seus avisos</h1>
+      <p class="mt-2 flex items-center gap-2 text-suave">
+        {
+          coleta ? (
+            <>
+              <span class="er-dot-live inline-block size-2 shrink-0 rounded-full bg-acento" aria-hidden="true" />
+              Última leitura: {formatoData.format(coleta.executadoEm)} às{" "}
+              {formatoHora.format(coleta.executadoEm)}
+            </>
+          ) : (
+            "A gente lê o Diário Oficial de SP todo dia útil de manhã."
+          )
+        }
+      </p>
+      <nav class="mt-4 flex flex-wrap gap-2 text-sm">
+        <a href="/painel/salvos" class="rounded-sm bg-campo px-3 py-1.5 font-medium text-tinta transition-colors hover:bg-ink hover:text-sobre-acento">
+          Salvos
+        </a>
+        <a href="/painel/equipe" class="rounded-sm bg-campo px-3 py-1.5 font-medium text-tinta transition-colors hover:bg-ink hover:text-sobre-acento">
+          Equipe
+        </a>
+        {
+          sessao.plano === "federacao" && (
+            <a
+              href="/painel/federacao"
+              class="rounded-sm bg-campo px-3 py-1.5 font-medium text-tinta transition-colors hover:bg-ink hover:text-sobre-acento"
+            >
+              Federação
+            </a>
+          )
+        }
+      </nav>
     </header>
 
     <Card class="mt-8">
-      <h2 class="font-display text-xl font-semibold">Termos vigiados</h2>
+      <h2 class="font-display text-xl font-bold tracking-tight text-ink">O que você acompanha</h2>
       <p class="mt-1 text-sm text-suave">
-        Avisamos quando um deles aparecer no Diário Oficial. Vale nome da sua
-        ONG, sua causa, seu bairro.
+        Nome da ONG, bairro ou causa. Quando isso aparecer no Diário, a gente avisa por e-mail.
       </p>
 
       {
         termos.length > 0 && (
           <ul class="mt-4 space-y-2">
             {termos.map((t) => (
-              <li class="flex items-center justify-between gap-3 rounded-xl border border-borda px-4 py-2">
+              <li class="flex items-center justify-between gap-3 rounded-sm border border-borda bg-campo/60 px-4 py-2.5 transition-colors hover:border-ink/30">
                 <span class="font-semibold">{t.termo}</span>
                 <form method="POST" action={actions.keyword.remover}>
                   <input type="hidden" name="id" value={t.id} />
                   <button
                     type="submit"
                     class="text-sm text-suave hover:text-erro"
-                    aria-label={`Parar de vigiar ${t.termo}`}
+                    aria-label={`Parar de acompanhar ${t.termo}`}
                   >
                     remover
                   </button>
@@ -92,44 +179,232 @@ const formatoHora = new Intl.DateTimeFormat("pt-BR", {
         )
       }
 
+      {
+        sugestoes.length > 0 && (
+          <div class="mt-4">
+            <p class="text-sm font-semibold text-tinta/70">
+              {termos.length === 0 ? "Comece com uma sugestão" : "Ou escolha uma sugestão"}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              {sugestoes.map((s) => (
+                <form method="POST" action={actions.keyword.salvar}>
+                  <input type="hidden" name="termo" value={s.termo} />
+                  <button
+                    type="submit"
+                    class="cursor-pointer rounded-sm border border-borda bg-cartao px-3 py-1.5 text-sm font-medium text-tinta transition-colors hover:border-ink hover:bg-ink hover:text-sobre-acento"
+                    title={`Acompanhar “${s.termo}”`}
+                  >
+                    {s.rotulo}
+                  </button>
+                </form>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
       <form method="POST" action={actions.keyword.salvar} class="mt-4 flex items-end gap-3">
         <div class="grow">
           <Field
             name="termo"
-            label={termos.length === 0 ? "Comece com o nome da sua ONG" : "Vigiar outro termo"}
-            placeholder="ex.: chamamento público"
+            label={termos.length === 0 ? "Ou escreva o nome da ONG / bairro" : "Acompanhar outra palavra"}
+            placeholder="ex.: nome da sua ONG"
             erro={erroTermo}
+            required={false}
           />
         </div>
-        <Button>Vigiar</Button>
+        <Button>Acompanhar</Button>
+      </form>
+    </Card>
+
+    <Card class="mt-8">
+      <h2 class="font-display text-xl font-bold tracking-tight text-ink">Causa e região</h2>
+      <p class="mt-1 text-sm text-suave">
+        Além das palavras acima, avisamos quando sair oportunidade da sua causa
+        na sua região — com resumo e prazo, quando der pra ler.
+      </p>
+      <form method="POST" action={actions.perfil.salvar} class="mt-4 space-y-5">
+        <fieldset>
+          <legend class="text-sm font-semibold text-tinta/70">Causas (até 3)</legend>
+          <div class="mt-2 flex flex-wrap gap-3">
+            {CATALOGO_DE_CAUSAS.map((c) => (
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="causas"
+                  value={c.slug}
+                  checked={causasSelecionadas.has(c.slug)}
+                />
+                {c.nome}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend class="text-sm font-semibold text-tinta/70">Regiões (até 3)</legend>
+          <div class="mt-2 flex flex-wrap gap-3">
+            {CATALOGO_DE_REGIOES.map((r) => (
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="regioes"
+                  value={r.slug}
+                  checked={regioesSelecionadas.has(r.slug)}
+                />
+                {r.nome}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {erroPerfil && <p class="text-sm text-erro">{erroPerfil}</p>}
+        <Button>Salvar perfil</Button>
       </form>
     </Card>
 
     <section class="mt-8">
-      <h2 class="font-display text-xl font-semibold">O que já encontramos</h2>
+      <div class="flex items-baseline justify-between gap-3">
+        <h2 class="font-display text-xl font-bold tracking-tight text-ink">Histórico</h2>
+        {
+          total > 0 && (
+            <p class="text-sm text-suave">
+              {total} aviso{total === 1 ? "" : "s"}
+            </p>
+          )
+        }
+      </div>
+
       {
         avisos.length === 0 ? (
           <p class="mt-3 text-suave">
             {termos.length === 0
-              ? "Você ainda não vigia nenhum termo. Cadastre um acima para começar."
-              : "Nada por enquanto. A gente lê o Diário todo dia útil e avisa assim que sair algo."}
+              ? "Você ainda não acompanha nada. Adiciona o nome da ONG ou um bairro acima."
+              : "Nada novo por enquanto — amanhã de manhã a gente lê de novo."}
           </p>
         ) : (
-          <ul class="mt-4 space-y-4">
-            {avisos.map((a) => (
-              <li class="rounded-card border border-borda bg-cartao p-5">
-                <p class="font-semibold">{humanizarTitulo(a.titulo)}</p>
-                <p class="mt-1 text-sm text-suave">{a.trecho}</p>
-                <p class="mt-2 text-sm text-suave">
-                  Você vigia: <strong class="text-tinta">{a.termo ?? "seu termo"}</strong>
-                  {" · "}
-                  <a class="text-acento hover:text-acento-forte" href={`https://www.doe.sp.gov.br/${a.slug}`}>
-                    ver publicação na fonte
-                  </a>
-                </p>
-              </li>
-            ))}
-          </ul>
+          [...porDia.entries()].map(([dia, doDia]) => (
+            <div class="mt-6">
+              <h3 class="font-display text-base font-semibold capitalize text-suave">{dia}</h3>
+              <ul class="mt-3 space-y-4">
+                {doDia.map((a) => (
+                  <li
+                    class:list={[
+                      "er-card er-lift",
+                      a.irrelevanteEm && "opacity-60",
+                    ]}
+                  >
+                    <p class="font-semibold">
+                      {a.tipo === "retificacao" && (
+                        <span class="mr-2 text-sm font-semibold uppercase tracking-wide text-erro">
+                          Retificação
+                        </span>
+                      )}
+                      {humanizarTitulo(a.titulo)}
+                    </p>
+                    {
+                      a.origem === "perfil" && a.resumo && (
+                        <p class="mt-2 text-sm text-tinta">{a.resumo}</p>
+                      )
+                    }
+                    <p class="mt-1 text-sm text-suave">{a.trecho}</p>
+                    {
+                      a.prazoEm && (
+                        <p
+                          class:list={[
+                            "mt-2 text-sm font-semibold",
+                            prazoUrgente(
+                              { data: a.prazoEm, trecho: a.prazoTrecho ?? "", vencido: false },
+                              agora,
+                            )
+                              ? "text-erro"
+                              : "text-prazo",
+                          ]}
+                        >
+                          Prazo: {formatoData.format(a.prazoEm)}
+                          {a.prazoTrecho ? ` — “${a.prazoTrecho.slice(0, 80)}”` : ""}
+                        </p>
+                      )
+                    }
+                    <p class="mt-2 text-sm text-suave">
+                      {a.origem === "perfil" ? (
+                        <>Via perfil Radar</>
+                      ) : (
+                        <>
+                          Combinou com: <strong class="text-tinta">{a.termo ?? "o que você acompanha"}</strong>
+                        </>
+                      )}
+                      {" · "}
+                      <a
+                        class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
+                        href={`https://www.doe.sp.gov.br/${a.slug}`}
+                      >
+                        ver na fonte
+                      </a>
+                    </p>
+                    <div class="mt-3 flex flex-wrap items-center gap-4">
+                      {
+                        a.tipo !== "retificacao" && !a.irrelevanteEm && (
+                          <a
+                            href={`/painel/tradutor/${a.id}`}
+                            class="text-sm font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
+                          >
+                            Serve pra mim?
+                          </a>
+                        )
+                      }
+                      {
+                        salvosIds.has(a.id) ? (
+                          <span class="text-sm text-suave">Salvo pra depois</span>
+                        ) : (
+                          <form method="POST" action={actions.alerta.salvar}>
+                            <input type="hidden" name="id" value={a.id} />
+                            <button type="submit" class="text-sm font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+                              Salvar pra depois
+                            </button>
+                          </form>
+                        )
+                      }
+                      {
+                        a.irrelevanteEm ? (
+                          <span class="text-sm text-suave">Marcado como “não era pra mim”</span>
+                        ) : (
+                          <form method="POST" action={actions.alerta.marcarIrrelevante}>
+                            <input type="hidden" name="id" value={a.id} />
+                            <button type="submit" class="text-sm text-suave hover:text-erro">
+                              Isso não era pra mim
+                            </button>
+                          </form>
+                        )
+                      }
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )
+      }
+
+      {
+        totalPaginas > 1 && (
+          <nav class="mt-8 flex items-center justify-between text-sm" aria-label="Paginação do histórico">
+            {pagina > 1 ? (
+              <a href={`/painel?pagina=${pagina - 1}`} class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+                ← mais recentes
+              </a>
+            ) : (
+              <span />
+            )}
+            <span class="text-suave">
+              Página {pagina} de {totalPaginas}
+            </span>
+            {pagina < totalPaginas ? (
+              <a href={`/painel?pagina=${pagina + 1}`} class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+                anteriores →
+              </a>
+            ) : (
+              <span />
+            )}
+          </nav>
         )
       }
     </section>

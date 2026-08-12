@@ -1,11 +1,20 @@
 ---
 interface Props {
   class?: string;
+  lift?: boolean;
+  /** Sem sombra deslocada (tabelas/listas densas). */
+  quiet?: boolean;
 }
 
-const { class: extra = "" } = Astro.props;
+const { class: extra = "", lift = false, quiet = false } = Astro.props;
 ---
 
-<div class={`rounded-card border border-borda bg-cartao p-6 ${extra}`}>
+<div
+  class:list={[
+    quiet ? "er-card-quiet" : "er-card",
+    lift && "er-lift",
+    extra,
+  ]}
+>
   <slot />
 </div>

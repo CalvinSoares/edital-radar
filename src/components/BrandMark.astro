@@ -1,0 +1,24 @@
+---
+interface Props {
+  class?: string;
+  /** Título acessível do ícone. */
+  titulo?: string;
+}
+
+const { class: extra = "", titulo = "Edital Radar" } = Astro.props;
+---
+
+<span class={`er-mark ${extra}`} role="img" aria-label={titulo}>
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="8" fill="currentColor"></rect>
+    <circle cx="16" cy="16" r="9" stroke="#D99B7F" stroke-width="1.6" opacity="0.9"></circle>
+    <circle cx="16" cy="16" r="5.5" stroke="#FFF7F2" stroke-width="1.6"></circle>
+    <circle cx="16" cy="16" r="2.2" fill="#D99B7F"></circle>
+    <path
+      d="M16 16 L23.5 10.2"
+      stroke="#D99B7F"
+      stroke-width="2"
+      stroke-linecap="round"
+    ></path>
+  </svg>
+</span>

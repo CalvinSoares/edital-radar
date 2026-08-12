@@ -3,19 +3,30 @@ interface Props {
   variante?: "primario" | "neutro" | "fantasma";
   type?: "submit" | "button";
   class?: string;
+  radar?: boolean;
 }
 
-const { variante = "primario", type = "submit", class: extra = "" } = Astro.props;
+const {
+  variante = "primario",
+  type = "submit",
+  class: extra = "",
+  radar = false,
+} = Astro.props;
 
 const base =
-  "inline-block rounded-xl px-5 py-2.5 font-semibold transition-colors disabled:opacity-60";
+  "inline-block cursor-pointer rounded-sm px-5 py-2.5 font-semibold tracking-tight transition-[background-color,color,transform,box-shadow] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60";
 const porVariante = {
-  primario: "bg-acento text-sobre-acento hover:bg-acento-forte",
-  neutro: "border border-borda bg-cartao text-tinta hover:border-acento",
-  fantasma: "text-acento hover:text-acento-forte",
+  primario:
+    "bg-acento text-sobre-acento hover:bg-acento-forte active:scale-[0.98]",
+  neutro:
+    "border-2 border-ink/25 bg-cartao text-tinta hover:border-ink hover:bg-campo",
+  fantasma: "text-tinta hover:underline",
 };
 ---
 
-<button type={type} class={`${base} ${porVariante[variante]} ${extra}`}>
+<button
+  type={type}
+  class={`${base} ${porVariante[variante]} ${radar ? "er-radar-pulse" : ""} ${extra}`}
+>
   <slot />
 </button>

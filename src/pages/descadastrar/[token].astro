@@ -20,28 +20,29 @@ if (!sucesso) {
 
 <Base titulo="Descadastro — Edital Radar">
   <main class="mx-auto max-w-2xl px-4 py-24 text-center">
+    <p class="er-brand text-lg text-ink">Edital Radar</p>
     {
       sucesso ? (
         <>
-          <h1 class="font-display text-3xl font-bold text-acento">Pronto, você foi descadastrado</h1>
+          <h1 class="font-display mt-4 text-3xl font-bold tracking-tight text-ink">Pronto — você saiu da lista</h1>
           <p class="mt-4 text-suave">
-            Você não vai mais receber avisos do Edital Radar neste e-mail. Se
-            mudar de ideia, é só se cadastrar de novo.
+            Não vamos mais mandar avisos neste e-mail. Se mudar de ideia, é só
+            se cadastrar de novo.
           </p>
         </>
       ) : (
         <>
-          <h1 class="font-display text-3xl font-bold text-acento">Esse link não funciona mais</h1>
+          <h1 class="font-display mt-4 text-3xl font-bold tracking-tight text-ink">Esse link não funciona mais</h1>
           <p class="mt-4 text-suave">
-            O link de descadastro pode ter expirado. Se você continua recebendo
-            e-mails indesejados, responda qualquer aviso pedindo a remoção.
+            Pode ter expirado. Se ainda estiver chegando e-mail, responde
+            qualquer aviso pedindo a remoção.
           </p>
         </>
       )
     }
     <a
       href="/"
-      class="mt-8 inline-block rounded-xl bg-acento px-5 py-2.5 font-semibold text-sobre-acento hover:bg-acento-forte"
+      class="mt-8 inline-block rounded-sm bg-acento px-5 py-2.5 font-semibold text-sobre-acento transition-colors hover:bg-acento-forte"
     >
       Voltar ao início
     </a>

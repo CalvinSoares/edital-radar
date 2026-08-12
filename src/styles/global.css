@@ -1,61 +1,78 @@
 @import "tailwindcss";
 
-/* Tokens canônicos — ver docs/base-de-conhecimentos/frontend/tokens-design.md.
-   Nunca inventar paleta paralela: cor nova entra aqui E no @theme. */
+/* Tokens — ColorHunt #0F3040 / #464858 / #A56F63 / #D99B7F
+   Contraste: CTA usa ink (não clay claro) + texto creme (AA). */
 :root {
-  --fundo: #f7f6f2;
+  --fundo: #f7f1ed;
   --cartao: #ffffff;
-  --tinta: #1a2433;
-  --suave: rgba(26, 36, 51, 0.62);
-  --acento: #2456c9;
-  --acento-forte: #163a8f;
-  --acento-suave: rgba(36, 86, 201, 0.12);
-  --sobre-acento: #ffffff;
-  --prazo: #b45309;
-  --prazo-suave: rgba(180, 83, 9, 0.14);
-  --borda: rgba(26, 36, 51, 0.12);
-  --campo-bg: rgba(26, 36, 51, 0.04);
-  --erro: #b3261e;
+  --tinta: #0f3040;
+  --suave: rgba(15, 48, 64, 0.72);
+  --acento: #0f3040;
+  --acento-forte: #1a4558;
+  --acento-suave: rgba(165, 111, 99, 0.14);
+  --sobre-acento: #fff7f2;
+  --prazo: #8a3d32;
+  --prazo-suave: rgba(138, 61, 50, 0.14);
+  --borda: rgba(15, 48, 64, 0.16);
+  --campo-bg: rgba(15, 48, 64, 0.06);
+  --erro: #9b2c2c;
+  --ink: #0f3040;
+  --slate: #464858;
+  --peach: #c47d5e;
+  --clay: #a56f63;
+  --sombra-card:
+    4px 4px 0 0 color-mix(in srgb, #d99b7f 70%, transparent),
+    0 10px 28px rgba(15, 48, 64, 0.07);
 }
 
-/* Tema escuro: acento clareia; texto sobre acento vira tinta escura
-   (contraste AA — nunca assumir branco sobre acento claro). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fundo: #12161d;
-    --cartao: #1a212b;
-    --tinta: #e8ebef;
-    --suave: rgba(232, 235, 239, 0.62);
-    --acento: #7da3f5;
-    --acento-forte: #a3bef8;
-    --acento-suave: rgba(125, 163, 245, 0.16);
-    --sobre-acento: #12161d;
-    --prazo: #e8a75c;
-    --prazo-suave: rgba(232, 167, 92, 0.16);
-    --borda: rgba(232, 235, 239, 0.14);
-    --campo-bg: rgba(232, 235, 239, 0.06);
+    --fundo: #0c2834;
+    --cartao: #143848;
+    --tinta: #fff7f2;
+    --suave: rgba(255, 247, 242, 0.72);
+    --acento: #e4a888;
+    --acento-forte: #c47d5e;
+    --acento-suave: rgba(228, 168, 136, 0.16);
+    --sobre-acento: #0f3040;
+    --prazo: #e4a888;
+    --prazo-suave: rgba(228, 168, 136, 0.16);
+    --borda: rgba(255, 247, 242, 0.16);
+    --campo-bg: rgba(255, 247, 242, 0.07);
     --erro: #f2857c;
+    --ink: #fff7f2;
+    --slate: #9a9cae;
+    --peach: #e4a888;
+    --clay: #c48a7c;
+    --sombra-card:
+      4px 4px 0 0 color-mix(in srgb, #a56f63 55%, transparent),
+      0 12px 32px rgba(0, 0, 0, 0.35);
   }
 }
 
 [data-theme="dark"] {
-  --fundo: #12161d;
-  --cartao: #1a212b;
-  --tinta: #e8ebef;
-  --suave: rgba(232, 235, 239, 0.62);
-  --acento: #7da3f5;
-  --acento-forte: #a3bef8;
-  --acento-suave: rgba(125, 163, 245, 0.16);
-  --sobre-acento: #12161d;
-  --prazo: #e8a75c;
-  --prazo-suave: rgba(232, 167, 92, 0.16);
-  --borda: rgba(232, 235, 239, 0.14);
-  --campo-bg: rgba(232, 235, 239, 0.06);
+  --fundo: #0c2834;
+  --cartao: #143848;
+  --tinta: #fff7f2;
+  --suave: rgba(255, 247, 242, 0.72);
+  --acento: #e4a888;
+  --acento-forte: #c47d5e;
+  --acento-suave: rgba(228, 168, 136, 0.16);
+  --sobre-acento: #0f3040;
+  --prazo: #e4a888;
+  --prazo-suave: rgba(228, 168, 136, 0.16);
+  --borda: rgba(255, 247, 242, 0.16);
+  --campo-bg: rgba(255, 247, 242, 0.07);
   --erro: #f2857c;
+  --ink: #fff7f2;
+  --slate: #9a9cae;
+  --peach: #e4a888;
+  --clay: #c48a7c;
+  --sombra-card:
+    4px 4px 0 0 color-mix(in srgb, #a56f63 55%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
-/* Ponte tokens → utilitários Tailwind v4.
-   Só o que está aqui vira classe (bg-cartao, text-tinta, rounded-card…). */
 @theme {
   --color-fundo: var(--fundo);
   --color-cartao: var(--cartao);
@@ -70,13 +87,192 @@
   --color-borda: var(--borda);
   --color-campo: var(--campo-bg);
   --color-erro: var(--erro);
-  --radius-card: 14px;
-  --font-display: "Georgia", "Times New Roman", serif;
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-peach: var(--peach);
+  --color-clay: var(--clay);
+  --radius-card: 8px;
+  --font-display: "Syne", "Arial Narrow", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+a[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[type="reset"]:disabled {
+  cursor: not-allowed;
 }
 
 body {
   background-color: var(--fundo);
+  background-image: radial-gradient(
+    ellipse 100% 60% at 50% -20%,
+    rgba(217, 155, 127, 0.22),
+    transparent 60%
+  );
+  background-attachment: fixed;
   color: var(--tinta);
   font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ——— Shell / tipografia ——— */
+
+.er-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.er-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--ink);
+}
+
+.er-mark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.er-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--borda);
+  background: color-mix(in srgb, var(--cartao) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+/* Card: sombra “papel deslocado” (sem faixa lateral) */
+.er-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--borda);
+  background: var(--cartao);
+  box-shadow: var(--sombra-card);
+  padding: 1.35rem 1.4rem;
+}
+
+.er-card-quiet {
+  position: relative;
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--borda);
+  background: var(--cartao);
+  box-shadow: 0 8px 24px rgba(15, 48, 64, 0.06);
+  padding: 1.35rem 1.5rem;
+}
+
+/* Links com contraste estável */
+a:not([class*="bg-"]) {
+  text-underline-offset: 3px;
+}
+
+/* ——— Motion ——— */
+
+@keyframes er-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes er-radar {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 48, 64, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(15, 48, 64, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 48, 64, 0);
+  }
+}
+
+@keyframes er-pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.75;
+  }
+}
+
+.er-rise {
+  animation: er-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.er-rise-delay-1 {
+  animation-delay: 0.07s;
+}
+
+.er-rise-delay-2 {
+  animation-delay: 0.14s;
+}
+
+.er-rise-delay-3 {
+  animation-delay: 0.22s;
+}
+
+.er-rise-delay-4 {
+  animation-delay: 0.3s;
+}
+
+.er-radar-pulse {
+  animation: er-radar 2.6s ease-out infinite;
+}
+
+.er-dot-live {
+  animation: er-pulse-dot 1.8s ease-in-out infinite;
+}
+
+.er-lift {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+
+.er-lift:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    6px 6px 0 0 color-mix(in srgb, #d99b7f 80%, transparent),
+    0 14px 32px rgba(15, 48, 64, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .er-rise,
+  .er-rise-delay-1,
+  .er-rise-delay-2,
+  .er-rise-delay-3,
+  .er-rise-delay-4,
+  .er-radar-pulse,
+  .er-dot-live {
+    animation: none;
+  }
+
+  .er-lift,
+  .er-lift:hover {
+    transition: none;
+    transform: none;
+  }
 }

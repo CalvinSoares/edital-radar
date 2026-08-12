@@ -1,0 +1,66 @@
+---
+import BrandMark from "~/components/BrandMark.astro";
+
+interface Props {
+  /** Página atual para destaque na nav (opcional). */
+  ativo?: "inicio" | "temas" | "municipios" | "status" | "entrar" | "painel";
+  /** Links extras à direita (ex.: Sair). */
+  compacto?: boolean;
+}
+
+const { ativo, compacto = false } = Astro.props;
+
+const links = [
+  { href: "/temas", id: "temas" as const, label: "Temas" },
+  { href: "/municipios", id: "municipios" as const, label: "Municípios" },
+  { href: "/status", id: "status" as const, label: "Status" },
+];
+---
+
+<header class="er-site-header">
+  <div
+    class:list={[
+      "mx-auto flex items-center justify-between gap-4 px-4",
+      compacto ? "max-w-2xl py-3" : "max-w-3xl py-3.5 md:max-w-4xl",
+    ]}
+  >
+    <a
+      href="/"
+      class="group flex items-center gap-2.5 text-tinta no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+    >
+      <BrandMark class="transition-transform group-hover:scale-105" />
+      <span class="er-brand text-lg md:text-xl">Edital Radar</span>
+    </a>
+
+    <nav class="flex items-center gap-1 text-sm sm:gap-2" aria-label="Principal">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class:list={[
+              "rounded-sm px-2 py-1.5 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:px-2.5",
+              ativo === l.id
+                ? "bg-ink text-sobre-acento"
+                : "text-slate hover:bg-campo hover:text-tinta",
+            ]}
+            aria-current={ativo === l.id ? "page" : undefined}
+          >
+            {l.label}
+          </a>
+        ))
+      }
+      <a
+        href={ativo === "painel" ? "/painel" : "/entrar"}
+        class:list={[
+          "ml-1 rounded-sm px-3 py-1.5 font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
+          ativo === "entrar" || ativo === "painel"
+            ? "bg-acento text-sobre-acento"
+            : "bg-ink text-sobre-acento hover:bg-acento-forte",
+        ]}
+      >
+        {ativo === "painel" ? "Painel" : "Entrar"}
+      </a>
+      <slot name="acoes" />
+    </nav>
+  </div>
+</header>

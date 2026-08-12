@@ -1,14 +1,31 @@
 ---
 import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
+import BrandMark from "~/components/BrandMark.astro";
 
 export const prerender = true;
 ---
 
-<Base titulo="Página não encontrada — Edital Radar">
+<Base
+  titulo="Página não encontrada — Edital Radar"
+  descricao="Essa página não existe no Edital Radar."
+  indexavel={false}
+>
+  <SiteHeader />
   <main class="mx-auto max-w-2xl px-4 py-24 text-center">
-    <h1 class="font-display text-4xl font-bold text-acento">Essa página não existe</h1>
-    <p class="mt-4 text-suave">O endereço pode ter mudado ou a publicação saiu do ar.</p>
-    <a href="/" class="mt-8 inline-block rounded-xl bg-acento px-5 py-2.5 font-semibold text-sobre-acento hover:bg-acento-forte">
+    <div class="flex justify-center">
+      <BrandMark />
+    </div>
+    <h1 class="er-rise font-display mt-6 text-4xl font-bold tracking-tight text-ink">
+      Essa página não existe
+    </h1>
+    <p class="er-rise er-rise-delay-1 mt-4 text-suave">
+      O endereço pode ter mudado, ou a publicação saiu do ar.
+    </p>
+    <a
+      href="/"
+      class="er-rise er-rise-delay-2 mt-8 inline-block cursor-pointer rounded-sm bg-acento px-5 py-2.5 font-semibold text-sobre-acento transition-colors hover:bg-acento-forte focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+    >
       Voltar ao início
     </a>
   </main>

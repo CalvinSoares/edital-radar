@@ -1,30 +1,104 @@
 ---
 import Base from "~/layouts/Base.astro";
+import SiteHeader from "~/components/SiteHeader.astro";
 
-export const prerender = true;
+export const prerender = false;
+
+const { db } = await import("~/server/db/cliente");
+const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
+const coleta = await ultimaColeta(db);
+
+const formatoData = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoHora = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+
+Astro.response.headers.set("Cache-Control", "public, max-age=60, s-maxage=300");
+
+const site = (import.meta.env.SITE_URL ?? "https://editalradar.com.br").replace(/\/$/, "");
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Edital Radar",
+    url: site,
+    description:
+      "Alerta de editais e fomento no Diário Oficial de SP para ONGs e projetos sociais.",
+    logo: `${site}/apple-touch-icon.svg`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Edital Radar",
+    url: site,
+    inLanguage: "pt-BR",
+    potentialAction: {
+      "@type": "RegisterAction",
+      target: `${site}/entrar`,
+      name: "Receber avisos por e-mail",
+    },
+  },
+];
 ---
 
-<Base titulo="Edital Radar — avisamos quando sai edital para a sua ONG">
-  <main class="mx-auto max-w-2xl px-4 py-24">
-    <p class="text-sm font-semibold uppercase tracking-widest text-suave">Edital Radar</p>
-    <h1 class="font-display mt-3 text-4xl font-bold text-acento md:text-5xl">
-      A gente lê o Diário Oficial todo dia. Você fica sabendo do edital a tempo.
-    </h1>
-    <p class="mt-6 text-lg text-suave">
-      Saiu chamamento, fomento ou edital que serve para a sua ONG no Diário
-      Oficial de São Paulo? Você recebe um e-mail no mesmo dia, com o trecho e
-      o link da publicação.
-    </p>
-    <div class="mt-10">
-      <a
-        href="/entrar"
-        class="inline-block rounded-xl bg-acento px-6 py-3 font-semibold text-sobre-acento hover:bg-acento-forte"
-      >
-        Quero receber avisos
-      </a>
-      <p class="mt-3 text-sm text-suave">Grátis para até 3 termos vigiados. Sem senha — só seu e-mail.</p>
+<Base
+  titulo="Edital Radar — avisamos quando sai edital para a sua ONG"
+  descricao="A gente lê o Diário Oficial de SP todo dia útil e avisa por e-mail quando sai edital ou chamamento pra sua ONG. Grátis, sem senha."
+  jsonLd={jsonLd}
+>
+  <SiteHeader ativo="inicio" />
+
+  <main class="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-3xl flex-col justify-center px-4 py-16 md:max-w-4xl md:py-20">
+    <div class="er-rise er-card max-w-3xl p-6 md:p-10">
+      <p class="er-brand text-5xl text-ink md:text-7xl">
+        Edital<br class="hidden sm:block" /> Radar
+      </p>
+      <h1 class="er-rise er-rise-delay-1 mt-8 max-w-2xl font-display text-2xl font-semibold leading-snug tracking-tight text-tinta md:text-3xl">
+        A gente lê o Diário Oficial todo dia. Você fica sabendo a tempo.
+      </h1>
+      <p class="er-rise er-rise-delay-2 mt-5 max-w-xl text-base leading-relaxed text-suave md:text-lg">
+        Saiu chamamento, fomento ou edital que serve pra sua ONG? Você recebe um
+        e-mail no mesmo dia — com o trecho e o link da publicação.
+      </p>
+
+      <div class="er-rise er-rise-delay-3 mt-10 flex flex-wrap items-center gap-4">
+        <a
+          href="/entrar"
+          class="er-radar-pulse inline-block cursor-pointer rounded-sm bg-acento px-6 py-3.5 font-semibold tracking-tight text-sobre-acento transition-colors hover:bg-acento-forte focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
+          Quero receber no e-mail
+        </a>
+        <p class="text-sm text-suave">Grátis · sem senha · avisa por e-mail</p>
+      </div>
     </div>
-    <p class="mt-8 text-sm text-suave">
+
+    {
+      coleta && (
+        <p class="er-rise er-rise-delay-4 mt-10 flex items-center gap-2 text-sm text-suave">
+          <span
+            class="er-dot-live inline-block size-2.5 shrink-0 rounded-full bg-clay"
+            aria-hidden="true"
+          />
+          Última leitura: {formatoData.format(coleta.executadoEm)} às{" "}
+          {formatoHora.format(coleta.executadoEm)}
+          {" · "}
+          <a
+            href="/status"
+            class="font-semibold text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
+          >
+            ver status
+          </a>
+        </p>
+      )
+    }
+
+    <p class="mt-10 max-w-xl text-xs leading-relaxed text-suave">
       O Edital Radar não substitui a leitura oficial. Sempre confira a
       publicação na fonte antes de agir.
     </p>
