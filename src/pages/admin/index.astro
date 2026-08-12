@@ -1,7 +1,8 @@
 ---
 import { actions } from "astro:actions";
 import Admin from "~/layouts/Admin.astro";
-import Card from "~/components/ui/Card.astro";
+import Stat from "~/components/ui/Stat.astro";
+import Badge from "~/components/ui/Badge.astro";
 import { adminAutenticado } from "~/shared/admin";
 
 export const prerender = false;
@@ -37,23 +38,24 @@ const cards = [
 ---
 
 <Admin titulo="Resumo" ativo="inicio">
-  <p class="mt-2 text-suave">
+  <p class="mt-2 flex flex-wrap items-center gap-2 text-suave">
     {
-      coleta
-        ? `Última coleta: ${coleta.dataAlvo} · ${coleta.status} · ${formato.format(coleta.executadoEm)} · ${coleta.totalColetado} pubs`
-        : "Nenhuma coleta registrada ainda."
+      coleta ? (
+        <>
+          Última coleta: <strong class="text-tinta">{coleta.dataAlvo}</strong>
+          <Badge variante={coleta.status === "ok" ? "ok" : coleta.status === "erro" ? "urgente" : "neutro"}>
+            {coleta.status}
+          </Badge>
+          {formato.format(coleta.executadoEm)} · {coleta.totalColetado} pubs
+        </>
+      ) : (
+        "Nenhuma coleta registrada ainda."
+      )
     }
   </p>
 
   <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    {
-      cards.map((c) => (
-        <Card>
-          <p class="text-sm text-suave">{c.label}</p>
-          <p class="font-display mt-1 text-3xl font-semibold text-acento">{c.valor}</p>
-        </Card>
-      ))
-    }
+    {cards.map((c) => <Stat valor={String(c.valor)} rotulo={c.label} />)}
   </div>
 
   <p class="mt-10 text-sm text-suave">

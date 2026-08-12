@@ -16,6 +16,8 @@
   --borda: rgba(15, 48, 64, 0.16);
   --campo-bg: rgba(15, 48, 64, 0.06);
   --erro: #9b2c2c;
+  --ok: #1e6b46;
+  --ok-suave: rgba(30, 107, 70, 0.13);
   --ink: #0f3040;
   --slate: #464858;
   --peach: #c47d5e;
@@ -40,6 +42,8 @@
     --borda: rgba(255, 247, 242, 0.16);
     --campo-bg: rgba(255, 247, 242, 0.07);
     --erro: #f2857c;
+    --ok: #7fd0a0;
+    --ok-suave: rgba(127, 208, 160, 0.16);
     --ink: #fff7f2;
     --slate: #9a9cae;
     --peach: #e4a888;
@@ -64,6 +68,8 @@
   --borda: rgba(255, 247, 242, 0.16);
   --campo-bg: rgba(255, 247, 242, 0.07);
   --erro: #f2857c;
+  --ok: #7fd0a0;
+  --ok-suave: rgba(127, 208, 160, 0.16);
   --ink: #fff7f2;
   --slate: #9a9cae;
   --peach: #e4a888;
@@ -87,13 +93,15 @@
   --color-borda: var(--borda);
   --color-campo: var(--campo-bg);
   --color-erro: var(--erro);
+  --color-ok: var(--ok);
+  --color-ok-suave: var(--ok-suave);
   --color-ink: var(--ink);
   --color-slate: var(--slate);
   --color-peach: var(--peach);
   --color-clay: var(--clay);
   --radius-card: 8px;
-  --font-display: "Syne", "Arial Narrow", sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Arial Narrow", sans-serif;
+  --font-sans: "Public Sans", system-ui, sans-serif;
 }
 
 button,
@@ -129,9 +137,9 @@ body {
 
 .er-brand {
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
 }
 
 .er-mark {
@@ -179,6 +187,239 @@ body {
 /* Links com contraste estável */
 a:not([class*="bg-"]) {
   text-underline-offset: 3px;
+}
+
+/* ——— Acessibilidade ——— */
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--peach) 40%, transparent);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--ink);
+}
+
+/* Link "pular para o conteúdo" — visível só no foco */
+.er-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0.75rem;
+  z-index: 100;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--sobre-acento);
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.er-skip:focus-visible {
+  left: 0.75rem;
+}
+
+/* ——— Composição ——— */
+
+.er-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.er-eyebrow::before {
+  content: "";
+  width: 1.4rem;
+  height: 2px;
+  background: var(--clay);
+}
+
+/* Grade sutil de fundo (hero) — some nas bordas */
+.er-grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--borda) 1px, transparent 1px),
+    linear-gradient(90deg, var(--borda) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 30%, black 25%, transparent 72%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 30%, black 25%, transparent 72%);
+}
+
+/* Barra de volume (listagens de tema) */
+.er-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--campo-bg);
+  overflow: hidden;
+}
+
+.er-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--clay), var(--peach));
+}
+
+/* Trilha de dias (tema / histórico): linha à esquerda + ponto por dia */
+.er-trilha {
+  position: relative;
+  margin-left: 0.35rem;
+  padding-left: 1.4rem;
+}
+
+.er-trilha::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: var(--borda);
+}
+
+.er-dia {
+  position: relative;
+}
+
+.er-dia::before {
+  content: "";
+  position: absolute;
+  left: calc(-1.4rem - 5px);
+  top: 0.25rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--fundo);
+  border: 2.5px solid var(--ink);
+}
+
+/* Chip selecionável (checkbox estilizado — perfil causa/região) */
+.er-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--borda);
+  background: var(--cartao);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tinta);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.er-chip:hover {
+  border-color: var(--ink);
+}
+
+.er-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.er-chip:has(input:checked) {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sobre-acento);
+}
+
+.er-chip:has(input:checked)::before {
+  content: "✓";
+  font-weight: 700;
+}
+
+.er-chip:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Tabela do admin */
+.er-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.er-table th {
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slate);
+  padding: 0.6rem 0.75rem;
+  border-bottom: 2px solid var(--borda);
+  white-space: nowrap;
+}
+
+.er-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: top;
+}
+
+.er-table tbody tr:hover {
+  background: var(--campo-bg);
+}
+
+/* Radar decorativo do hero */
+.er-radar {
+  position: relative;
+  border-radius: 9999px;
+  border: 1.5px solid var(--borda);
+  background: color-mix(in srgb, var(--cartao) 55%, transparent);
+  overflow: hidden;
+}
+
+.er-radar-varredura {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 290deg,
+    color-mix(in srgb, var(--clay) 10%, transparent) 320deg,
+    color-mix(in srgb, var(--clay) 45%, transparent) 356deg,
+    var(--clay) 360deg
+  );
+  opacity: 0.55;
+  animation: er-girar 5.5s linear infinite;
+}
+
+.er-radar-blip {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--clay);
+  animation: er-pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes er-girar {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ——— Motion ——— */
@@ -266,12 +507,15 @@ a:not([class*="bg-"]) {
   .er-rise-delay-3,
   .er-rise-delay-4,
   .er-radar-pulse,
-  .er-dot-live {
+  .er-dot-live,
+  .er-radar-varredura,
+  .er-radar-blip {
     animation: none;
   }
 
   .er-lift,
-  .er-lift:hover {
+  .er-lift:hover,
+  .er-chip {
     transition: none;
     transform: none;
   }

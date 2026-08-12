@@ -1,12 +1,20 @@
 ---
 import Base from "~/layouts/Base.astro";
 import SiteHeader from "~/components/SiteHeader.astro";
+import SiteFooter from "~/components/SiteFooter.astro";
+import HeroRadar from "~/components/HeroRadar.astro";
+import Stat from "~/components/ui/Stat.astro";
+import { CATALOGO_DE_TEMAS } from "~/server/match/temas";
 
 export const prerender = false;
 
 const { db } = await import("~/server/db/cliente");
 const { ultimaColeta } = await import("~/server/db/repositorios/coleta");
 const coleta = await ultimaColeta(db);
+
+const formatoMilhar = new Intl.NumberFormat("pt-BR");
+const publicacoesDia =
+  coleta && coleta.totalColetado > 0 ? formatoMilhar.format(coleta.totalColetado) : "~3,3 mil";
 
 const formatoData = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -54,53 +62,138 @@ const jsonLd = [
 >
   <SiteHeader ativo="inicio" />
 
-  <main class="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-3xl flex-col justify-center px-4 py-16 md:max-w-4xl md:py-20">
-    <div class="er-rise er-card max-w-3xl p-6 md:p-10">
-      <p class="er-brand text-5xl text-ink md:text-7xl">
-        Edital<br class="hidden sm:block" /> Radar
-      </p>
-      <h1 class="er-rise er-rise-delay-1 mt-8 max-w-2xl font-display text-2xl font-semibold leading-snug tracking-tight text-tinta md:text-3xl">
-        A gente lê o Diário Oficial todo dia. Você fica sabendo a tempo.
-      </h1>
-      <p class="er-rise er-rise-delay-2 mt-5 max-w-xl text-base leading-relaxed text-suave md:text-lg">
-        Saiu chamamento, fomento ou edital que serve pra sua ONG? Você recebe um
-        e-mail no mesmo dia — com o trecho e o link da publicação.
-      </p>
+  <main id="conteudo">
+    <!-- Hero -->
+    <section class="relative overflow-hidden">
+      <div class="er-grid-bg" aria-hidden="true"></div>
+      <div class="relative mx-auto grid max-w-3xl items-center gap-10 px-4 py-16 md:max-w-4xl md:grid-cols-[1fr_auto] md:py-24">
+        <div>
+          <p class="er-rise er-eyebrow">Diário Oficial de SP · todo dia útil</p>
+          <h1 class="er-rise er-rise-delay-1 er-brand mt-5 max-w-xl text-4xl text-ink sm:text-5xl md:text-6xl">
+            A gente lê o Diário. Você fica sabendo a tempo.
+          </h1>
+          <p class="er-rise er-rise-delay-2 mt-6 max-w-xl text-base leading-relaxed text-suave md:text-lg">
+            Saiu chamamento, fomento ou edital que serve pra sua ONG? Você recebe
+            um e-mail no mesmo dia — com o trecho e o link da publicação.
+          </p>
+          <div class="er-rise er-rise-delay-3 mt-9 flex flex-wrap items-center gap-4">
+            <a
+              href="/entrar"
+              class="er-radar-pulse inline-block rounded-sm bg-acento px-6 py-3.5 font-semibold tracking-tight text-sobre-acento transition-colors hover:bg-acento-forte"
+            >
+              Quero receber no e-mail
+            </a>
+            <p class="text-sm text-suave">Grátis · sem senha</p>
+          </div>
+          {
+            coleta && (
+              <p class="er-rise er-rise-delay-4 mt-8 flex items-center gap-2 text-sm text-suave">
+                <span
+                  class="er-dot-live inline-block size-2.5 shrink-0 rounded-full bg-clay"
+                  aria-hidden="true"
+                />
+                Última leitura: {formatoData.format(coleta.executadoEm)} às{" "}
+                {formatoHora.format(coleta.executadoEm)}
+                {" · "}
+                <a href="/status" class="font-semibold text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink">
+                  ver status
+                </a>
+              </p>
+            )
+          }
+        </div>
+        <HeroRadar class="er-rise er-rise-delay-2 hidden size-64 md:block lg:size-72" />
+      </div>
+    </section>
 
-      <div class="er-rise er-rise-delay-3 mt-10 flex flex-wrap items-center gap-4">
+    <!-- Números reais -->
+    <section class="mx-auto max-w-3xl px-4 md:max-w-4xl" aria-label="Números do Edital Radar">
+      <div class="grid gap-4 sm:grid-cols-3">
+        <Stat valor={publicacoesDia} rotulo="publicações lidas por dia" detalhe="a edição inteira, todo dia útil" />
+        <Stat valor={String(CATALOGO_DE_TEMAS.length)} rotulo="temas acompanhados" detalhe="chamamento, fomento, credenciamento…" />
+        <Stat valor="6h30" rotulo="hora da leitura" detalhe="o aviso chega de manhã, não depois do prazo" />
+      </div>
+    </section>
+
+    <!-- Como funciona -->
+    <section class="mx-auto max-w-3xl px-4 py-16 md:max-w-4xl md:py-20" aria-labelledby="como-funciona">
+      <p class="er-eyebrow">Como funciona</p>
+      <h2 id="como-funciona" class="font-display mt-3 text-2xl font-bold tracking-tight text-ink md:text-3xl">
+        Três passos, nenhuma senha
+      </h2>
+      <ol class="mt-8 grid gap-4 md:grid-cols-3">
+        <li class="er-card-quiet">
+          <p class="font-display text-sm font-bold text-clay">1</p>
+          <p class="mt-2 font-semibold text-tinta">Diga o que acompanhar</p>
+          <p class="mt-1.5 text-sm leading-relaxed text-suave">
+            Nome da sua ONG, sua causa, seu bairro — o que aparecer disso no
+            Diário, é seu assunto.
+          </p>
+        </li>
+        <li class="er-card-quiet">
+          <p class="font-display text-sm font-bold text-clay">2</p>
+          <p class="mt-2 font-semibold text-tinta">A gente lê tudo, cedo</p>
+          <p class="mt-1.5 text-sm leading-relaxed text-suave">
+            Todo dia útil de manhã o robô passa pelas ~3 mil publicações do
+            Diário Oficial de SP — inteiras, não só o título.
+          </p>
+        </li>
+        <li class="er-card-quiet">
+          <p class="font-display text-sm font-bold text-clay">3</p>
+          <p class="mt-2 font-semibold text-tinta">Você recebe o que importa</p>
+          <p class="mt-1.5 text-sm leading-relaxed text-suave">
+            Um e-mail por dia, no máximo — com o trecho exato, o prazo quando
+            der pra ler, e o link da fonte.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Temas em destaque -->
+    <section class="mx-auto max-w-3xl px-4 pb-16 md:max-w-4xl md:pb-20" aria-labelledby="temas-destaque">
+      <p class="er-eyebrow">Sem cadastro</p>
+      <h2 id="temas-destaque" class="font-display mt-3 text-2xl font-bold tracking-tight text-ink md:text-3xl">
+        Veja agora o que saiu, por tema
+      </h2>
+      <div class="mt-6 flex flex-wrap gap-2.5">
+        {
+          CATALOGO_DE_TEMAS.map((t) => (
+            <a
+              href={`/temas/${t.slug}`}
+              class="rounded-sm border-2 border-borda bg-cartao px-4 py-2 text-sm font-semibold text-tinta transition-colors hover:border-ink hover:bg-ink hover:text-sobre-acento"
+            >
+              {t.nome}
+            </a>
+          ))
+        }
+        <a
+          href="/temas"
+          class="rounded-sm px-4 py-2 text-sm font-semibold text-clay underline decoration-2 underline-offset-4 hover:text-ink"
+        >
+          todos os temas →
+        </a>
+      </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="mx-auto max-w-3xl px-4 pb-4 md:max-w-4xl">
+      <div class="er-card bg-acento-suave p-8 text-center md:p-12">
+        <h2 class="font-display text-2xl font-bold tracking-tight text-ink md:text-3xl">
+          Pare de descobrir edital pelo WhatsApp — atrasado
+        </h2>
+        <p class="mx-auto mt-3 max-w-md text-suave">
+          Edital bom passa e a entidade só descobre depois do prazo — porque
+          ninguém tem tempo de ler o Diário. Deixa que a gente lê.
+        </p>
         <a
           href="/entrar"
-          class="er-radar-pulse inline-block cursor-pointer rounded-sm bg-acento px-6 py-3.5 font-semibold tracking-tight text-sobre-acento transition-colors hover:bg-acento-forte focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          class="mt-7 inline-block rounded-sm bg-acento px-6 py-3.5 font-semibold tracking-tight text-sobre-acento transition-colors hover:bg-acento-forte"
         >
-          Quero receber no e-mail
+          Começar agora — é grátis
         </a>
-        <p class="text-sm text-suave">Grátis · sem senha · avisa por e-mail</p>
       </div>
-    </div>
-
-    {
-      coleta && (
-        <p class="er-rise er-rise-delay-4 mt-10 flex items-center gap-2 text-sm text-suave">
-          <span
-            class="er-dot-live inline-block size-2.5 shrink-0 rounded-full bg-clay"
-            aria-hidden="true"
-          />
-          Última leitura: {formatoData.format(coleta.executadoEm)} às{" "}
-          {formatoHora.format(coleta.executadoEm)}
-          {" · "}
-          <a
-            href="/status"
-            class="font-semibold text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
-          >
-            ver status
-          </a>
-        </p>
-      )
-    }
-
-    <p class="mt-10 max-w-xl text-xs leading-relaxed text-suave">
-      O Edital Radar não substitui a leitura oficial. Sempre confira a
-      publicação na fonte antes de agir.
-    </p>
+    </section>
   </main>
+
+  <SiteFooter />
 </Base>

@@ -1,6 +1,7 @@
 ---
 import Base from "~/layouts/Base.astro";
 import SiteHeader from "~/components/SiteHeader.astro";
+import SiteFooter from "~/components/SiteFooter.astro";
 import Card from "~/components/ui/Card.astro";
 import { CATALOGO_DE_TEMAS } from "~/server/match/temas";
 
@@ -9,6 +10,7 @@ export const prerender = false;
 const { db } = await import("~/server/db/cliente");
 const { contarPorTema } = await import("~/server/db/repositorios/temas");
 const totais = await contarPorTema(db, 30);
+const maiorTotal = Math.max(1, ...CATALOGO_DE_TEMAS.map((t) => totais.get(t.slug) ?? 0));
 
 Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600");
 ---
@@ -26,8 +28,9 @@ Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600"
   }}
 >
   <SiteHeader ativo="temas" />
-  <main class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
-    <h1 class="er-rise font-display text-3xl font-bold tracking-tight text-ink md:text-5xl">
+  <main id="conteudo" class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
+    <p class="er-rise er-eyebrow">Últimos 30 dias</p>
+    <h1 class="er-rise font-display mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">
       O que saiu no Diário, por tema
     </h1>
     <p class="er-rise er-rise-delay-1 mt-4 max-w-xl text-suave">
@@ -37,19 +40,26 @@ Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600"
 
     <div class="mt-10 space-y-3">
       {
-        CATALOGO_DE_TEMAS.map((tema) => (
-          <a href={`/temas/${tema.slug}`} class="block">
-            <Card lift>
-              <div class="flex items-baseline justify-between gap-3">
-                <h2 class="font-display text-xl font-bold tracking-tight text-ink">{tema.nome}</h2>
-                <span class="shrink-0 rounded-sm bg-campo px-2 py-0.5 text-xs font-semibold tabular-nums text-suave">
-                  {totais.get(tema.slug) ?? 0} · 30d
-                </span>
-              </div>
-              <p class="mt-1.5 text-sm leading-relaxed text-suave">{tema.descricao}</p>
-            </Card>
-          </a>
-        ))
+        CATALOGO_DE_TEMAS.map((tema, i) => {
+          const total = totais.get(tema.slug) ?? 0;
+          const largura = Math.max(4, Math.round((total / maiorTotal) * 100));
+          return (
+            <a href={`/temas/${tema.slug}`} class="er-rise block" style={`animation-delay: ${0.06 * (i + 1)}s`}>
+              <Card lift>
+                <div class="flex items-baseline justify-between gap-3">
+                  <h2 class="font-display text-xl font-bold tracking-tight text-ink">{tema.nome}</h2>
+                  <span class="shrink-0 rounded-sm bg-campo px-2 py-0.5 text-xs font-bold tabular-nums text-slate">
+                    {total} em 30 dias
+                  </span>
+                </div>
+                <div class="er-bar mt-3" role="presentation">
+                  <span style={`width: ${largura}%`} />
+                </div>
+                <p class="mt-3 text-sm leading-relaxed text-suave">{tema.descricao}</p>
+              </Card>
+            </a>
+          );
+        })
       }
     </div>
 
@@ -68,4 +78,5 @@ Astro.response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600"
       </a>
     </Card>
   </main>
+  <SiteFooter />
 </Base>

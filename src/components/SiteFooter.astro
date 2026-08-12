@@ -1,0 +1,49 @@
+---
+import BrandMark from "~/components/BrandMark.astro";
+
+const ano = new Date().getFullYear();
+---
+
+<footer class="mt-20 border-t border-borda bg-cartao/60">
+  <div class="mx-auto grid max-w-3xl gap-10 px-4 py-12 sm:grid-cols-3 md:max-w-4xl">
+    <div class="sm:col-span-1">
+      <a href="/" class="flex items-center gap-2 text-tinta no-underline">
+        <BrandMark />
+        <span class="er-brand text-base">Edital Radar</span>
+      </a>
+      <p class="mt-3 max-w-xs text-sm leading-relaxed text-suave">
+        Lemos o Diário Oficial de SP todo dia útil e avisamos quem precisa
+        saber — de graça, por e-mail.
+      </p>
+    </div>
+
+    <nav aria-label="Explorar">
+      <p class="er-eyebrow">Explorar</p>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a href="/temas" class="font-medium text-tinta hover:underline">O que saiu, por tema</a></li>
+        <li><a href="/municipios" class="font-medium text-tinta hover:underline">Por município</a></li>
+        <li><a href="/status" class="font-medium text-tinta hover:underline">Status da leitura</a></li>
+      </ul>
+    </nav>
+
+    <nav aria-label="Conta e fonte">
+      <p class="er-eyebrow">Conta</p>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a href="/entrar" class="font-medium text-tinta hover:underline">Entrar / criar conta</a></li>
+        <li><a href="/painel" class="font-medium text-tinta hover:underline">Meu painel</a></li>
+        <li>
+          <a href="https://www.doe.sp.gov.br" rel="noopener" class="font-medium text-tinta hover:underline">
+            Fonte: doe.sp.gov.br
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="border-t border-borda">
+    <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-suave md:max-w-4xl">
+      <p>© {ano} Edital Radar · feito para o terceiro setor</p>
+      <p>Não substitui a leitura oficial — sempre confira na fonte.</p>
+    </div>
+  </div>
+</footer>

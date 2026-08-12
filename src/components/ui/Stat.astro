@@ -1,0 +1,16 @@
+---
+interface Props {
+  valor: string;
+  rotulo: string;
+  detalhe?: string;
+  class?: string;
+}
+
+const { valor, rotulo, detalhe, class: extra = "" } = Astro.props;
+---
+
+<div class={`er-card-quiet ${extra}`}>
+  <p class="font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">{valor}</p>
+  <p class="mt-1 text-xs font-bold uppercase tracking-wider text-slate">{rotulo}</p>
+  {detalhe && <p class="mt-1.5 text-sm text-suave">{detalhe}</p>}
+</div>

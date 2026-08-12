@@ -1,6 +1,7 @@
 ---
 import Base from "~/layouts/Base.astro";
 import SiteHeader from "~/components/SiteHeader.astro";
+import SiteFooter from "~/components/SiteFooter.astro";
 import Card from "~/components/ui/Card.astro";
 import { temaPorSlug } from "~/server/match/temas";
 import { humanizarTitulo } from "~/server/alerta/render";
@@ -46,7 +47,7 @@ if (tema) {
   !tema ? (
     <Base titulo="Página não encontrada — Edital Radar" indexavel={false}>
       <SiteHeader ativo="temas" />
-      <main class="mx-auto max-w-2xl px-4 py-24 text-center">
+      <main id="conteudo" class="mx-auto max-w-2xl px-4 py-24 text-center">
         <h1 class="font-display text-4xl font-bold tracking-tight text-ink">Essa página não existe</h1>
         <p class="mt-4 text-suave">Esse tema não está no nosso catálogo.</p>
         <a
@@ -71,19 +72,19 @@ if (tema) {
       }}
     >
       <SiteHeader ativo="temas" />
-      <main class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
-        <nav class="text-sm text-suave">
+      <main id="conteudo" class="mx-auto max-w-2xl px-4 py-12 md:max-w-3xl md:py-16">
+        <nav class="text-sm text-suave" aria-label="Você está em">
           <a href="/temas" class="font-medium text-tinta underline decoration-acento decoration-2 underline-offset-4">
             Temas
           </a>
           {" › "}
           {tema.nome}
         </nav>
-        <h1 class="font-display mt-4 text-3xl font-bold tracking-tight text-ink md:text-5xl">
+        <h1 class="er-rise font-display mt-4 text-3xl font-bold tracking-tight text-ink md:text-5xl">
           {tema.nome}
         </h1>
-        <p class="mt-3 max-w-xl text-suave">{tema.descricao}</p>
-        <p class="mt-2 text-sm text-suave">
+        <p class="er-rise er-rise-delay-1 mt-3 max-w-xl text-suave">{tema.descricao}</p>
+        <p class="er-rise er-rise-delay-1 mt-2 text-sm text-suave">
           Últimos 15 dias · fonte:
           <a
             href="https://www.doe.sp.gov.br"
@@ -103,28 +104,35 @@ if (tema) {
               </p>
             </Card>
           ) : (
-            [...porDia.entries()].map(([dia, doDia]) => (
-              <section class="mt-10">
-                <h2 class="font-display text-sm font-bold uppercase tracking-wider text-suave">{dia}</h2>
-                <ul class="mt-3 space-y-3">
-                  {doDia.map((p) => (
-                    <li class="er-card er-lift">
-                      <p class="font-semibold">{humanizarTitulo(p.titulo)}</p>
-                      {orgaoDe(p.hierarchy) && (
-                        <p class="mt-0.5 text-xs uppercase tracking-wide text-suave">{orgaoDe(p.hierarchy)}</p>
-                      )}
-                      {p.excerpt && <p class="mt-2 text-sm text-suave">{p.excerpt.slice(0, 220)}…</p>}
-                      <a
-                        class="mt-3 inline-block text-sm font-medium text-tinta underline decoration-acento decoration-2 underline-offset-4"
-                        href={`https://www.doe.sp.gov.br/${p.slug}`}
-                      >
-                        ver na fonte
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))
+            <div class="er-trilha mt-10">
+              {[...porDia.entries()].map(([dia, doDia]) => (
+                <section class="er-dia pb-8 last:pb-0">
+                  <h2 class="font-display text-sm font-bold uppercase tracking-wider text-suave">
+                    {dia}
+                    <span class="ml-2 rounded-sm bg-campo px-1.5 py-0.5 text-xs font-bold tabular-nums normal-case tracking-normal text-slate">
+                      {doDia.length}
+                    </span>
+                  </h2>
+                  <ul class="mt-3 space-y-3">
+                    {doDia.map((p) => (
+                      <li class="er-card er-lift">
+                        <p class="font-semibold">{humanizarTitulo(p.titulo)}</p>
+                        {orgaoDe(p.hierarchy) && (
+                          <p class="mt-0.5 text-xs uppercase tracking-wide text-suave">{orgaoDe(p.hierarchy)}</p>
+                        )}
+                        {p.excerpt && <p class="mt-2 text-sm text-suave">{p.excerpt.slice(0, 220)}…</p>}
+                        <a
+                          class="mt-3 inline-block text-sm font-medium text-tinta underline decoration-acento decoration-2 underline-offset-4"
+                          href={`https://www.doe.sp.gov.br/${p.slug}`}
+                        >
+                          ver na fonte
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           )
         }
 
@@ -142,11 +150,8 @@ if (tema) {
           </a>
         </Card>
 
-        <p class="mt-10 text-xs text-suave">
-          O Edital Radar não substitui a leitura oficial. Sempre confira a
-          publicação na fonte antes de agir.
-        </p>
       </main>
+      <SiteFooter />
     </Base>
   )
 }

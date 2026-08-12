@@ -115,7 +115,7 @@ for (const a of avisos) {
       <Button variante="fantasma" type="submit">Sair</Button>
     </form>
   </SiteHeader>
-  <main class="mx-auto max-w-2xl px-4 py-10 md:py-14">
+  <main id="conteudo" class="mx-auto max-w-2xl px-4 py-10 md:py-14">
     <header>
       <h1 class="font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">Seus avisos</h1>
       <p class="mt-2 flex items-center gap-2 text-suave">
@@ -226,9 +226,9 @@ for (const a of avisos) {
       <form method="POST" action={actions.perfil.salvar} class="mt-4 space-y-5">
         <fieldset>
           <legend class="text-sm font-semibold text-tinta/70">Causas (até 3)</legend>
-          <div class="mt-2 flex flex-wrap gap-3">
+          <div class="mt-2.5 flex flex-wrap gap-2">
             {CATALOGO_DE_CAUSAS.map((c) => (
-              <label class="flex items-center gap-2 text-sm">
+              <label class="er-chip">
                 <input
                   type="checkbox"
                   name="causas"
@@ -242,9 +242,9 @@ for (const a of avisos) {
         </fieldset>
         <fieldset>
           <legend class="text-sm font-semibold text-tinta/70">Regiões (até 3)</legend>
-          <div class="mt-2 flex flex-wrap gap-3">
+          <div class="mt-2.5 flex flex-wrap gap-2">
             {CATALOGO_DE_REGIOES.map((r) => (
-              <label class="flex items-center gap-2 text-sm">
+              <label class="er-chip">
                 <input
                   type="checkbox"
                   name="regioes"
@@ -281,8 +281,9 @@ for (const a of avisos) {
               : "Nada novo por enquanto — amanhã de manhã a gente lê de novo."}
           </p>
         ) : (
-          [...porDia.entries()].map(([dia, doDia]) => (
-            <div class="mt-6">
+          <div class="er-trilha mt-6">
+            {[...porDia.entries()].map(([dia, doDia]) => (
+            <div class="er-dia pb-6 last:pb-0">
               <h3 class="font-display text-base font-semibold capitalize text-suave">{dia}</h3>
               <ul class="mt-3 space-y-4">
                 {doDia.map((a) => (
@@ -294,7 +295,7 @@ for (const a of avisos) {
                   >
                     <p class="font-semibold">
                       {a.tipo === "retificacao" && (
-                        <span class="mr-2 text-sm font-semibold uppercase tracking-wide text-erro">
+                        <span class="mr-2 inline-flex items-center rounded-sm bg-erro/12 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-erro">
                           Retificação
                         </span>
                       )}
@@ -380,7 +381,8 @@ for (const a of avisos) {
                 ))}
               </ul>
             </div>
-          ))
+            ))}
+          </div>
         )
       }
 

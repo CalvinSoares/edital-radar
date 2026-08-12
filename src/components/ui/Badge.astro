@@ -1,0 +1,22 @@
+---
+interface Props {
+  variante?: "neutro" | "destaque" | "prazo" | "urgente" | "ok";
+  class?: string;
+}
+
+const { variante = "neutro", class: extra = "" } = Astro.props;
+
+const porVariante = {
+  neutro: "bg-campo text-slate",
+  destaque: "bg-acento-suave text-ink",
+  prazo: "bg-prazo-suave text-prazo",
+  urgente: "bg-erro/12 text-erro",
+  ok: "bg-ok-suave text-ok",
+};
+---
+
+<span
+  class={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${porVariante[variante]} ${extra}`}
+>
+  <slot />
+</span>

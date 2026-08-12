@@ -25,8 +25,9 @@ const enviado = Astro.url.searchParams.get("enviado") === "1";
 
 <Base titulo="Entrar — Edital Radar" indexavel={false}>
   <SiteHeader ativo="entrar" compacto />
-  <main class="mx-auto max-w-md px-4 py-14 md:py-20">
-    <h1 class="er-rise font-display text-3xl font-bold tracking-tight text-ink md:text-4xl">
+  <main id="conteudo" class="mx-auto max-w-md px-4 py-14 md:py-20">
+    <p class="er-rise er-eyebrow">{enviado ? "Link enviado" : "Grátis · sem senha"}</p>
+    <h1 class="er-rise font-display mt-3 text-3xl font-bold tracking-tight text-ink md:text-4xl">
       {enviado ? "Olha o e-mail" : "Entra sem senha"}
     </h1>
     <p class="er-rise er-rise-delay-1 mt-3 text-suave">
@@ -63,5 +64,24 @@ const enviado = Astro.url.searchParams.get("enviado") === "1";
         )
       }
     </Card>
+
+    {
+      !enviado && (
+        <ul class="er-rise er-rise-delay-3 mt-6 space-y-2 text-sm text-suave">
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 font-bold text-ok" aria-hidden="true">✓</span>
+            Um e-mail por dia, no máximo — e só quando sair algo seu
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 font-bold text-ok" aria-hidden="true">✓</span>
+            Sai quando quiser, com um clique no próprio e-mail
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-0.5 font-bold text-ok" aria-hidden="true">✓</span>
+            Todo aviso traz o trecho e o link da publicação oficial
+          </li>
+        </ul>
+      )
+    }
   </main>
 </Base>

@@ -1,0 +1,24 @@
+---
+// Radar decorativo do hero — varredura em conic-gradient + blips pulsando.
+// Puramente visual (aria-hidden); some no reduced-motion via global.css.
+interface Props {
+  class?: string;
+}
+
+const { class: extra = "" } = Astro.props;
+---
+
+<div class={`er-radar ${extra}`} aria-hidden="true">
+  <div class="er-radar-varredura"></div>
+  <svg viewBox="0 0 200 200" fill="none" class="absolute inset-0 h-full w-full">
+    <circle cx="100" cy="100" r="94" stroke="var(--borda)" stroke-width="1.5"></circle>
+    <circle cx="100" cy="100" r="64" stroke="var(--borda)" stroke-width="1.5"></circle>
+    <circle cx="100" cy="100" r="34" stroke="var(--borda)" stroke-width="1.5"></circle>
+    <line x1="100" y1="6" x2="100" y2="194" stroke="var(--borda)" stroke-width="1"></line>
+    <line x1="6" y1="100" x2="194" y2="100" stroke="var(--borda)" stroke-width="1"></line>
+    <circle cx="100" cy="100" r="5" fill="var(--ink)"></circle>
+  </svg>
+  <span class="er-radar-blip" style="left: 63%; top: 28%;"></span>
+  <span class="er-radar-blip" style="left: 34%; top: 58%; animation-delay: 0.9s; background: var(--ink);"></span>
+  <span class="er-radar-blip" style="left: 55%; top: 72%; animation-delay: 1.7s;"></span>
+</div>

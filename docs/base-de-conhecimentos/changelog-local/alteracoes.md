@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-08-12 — Refino de layout: composição, fonte, a11y e motion
+
+- Tipografia nova: **Bricolage Grotesque** (display) + **Public Sans** (body)
+- Landing recomposta: hero 2 colunas com radar decorativo animado
+  (`HeroRadar`, varredura conic + blips), grade de fundo mascarada, faixa de
+  números REAIS (pubs do dia via `ultimaColeta`), "como funciona" em 3
+  passos, temas em destaque (links internos) e CTA final
+- `SiteFooter` novo em todas as públicas (nav + disclaimer centralizado —
+  saiu o disclaimer inline repetido)
+- Componentes novos: `Badge` (neutro/destaque/prazo/urgente/ok), `Stat`,
+  `HeroRadar`; token `--ok`/`--ok-suave` (AA medido)
+- `/temas`: barras de volume relativo por tema; tema e histórico do painel
+  ganharam trilha vertical com ponto por dia (`.er-trilha`/`.er-dia`)
+- Painel: causas/regiões viraram chips (`.er-chip`, checkbox real oculto,
+  estado via `:has`); badge de retificação
+- `/status`: badge de status + grid de Stats; admin resumo com Stat/Badge
+- A11y: skip link global → `<main id="conteudo">` em toda página,
+  `:focus-visible` global, `accent-color`, 375px sem overflow (marca do
+  header some em <440px), reduced-motion cobre as animações novas
+- Verificado no browser: fontes aplicadas, tokens dark ok (CTA claro com
+  ink escuro), varredura animando, barras com largura proporcional
+
 ## 2026-08-12 — SEO meta: OG, canonical, noindex, JSON-LD
 
 - `Base.astro`: canonical, robots, Open Graph + Twitter, `/og.png`

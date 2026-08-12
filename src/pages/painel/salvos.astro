@@ -30,7 +30,7 @@ const formatoData = new Intl.DateTimeFormat("pt-BR", {
 <Base titulo="Salvos — Edital Radar">
   {sessao.vistaAdmin && <VistaAdminBar email={sessao.email} />}
   <SiteHeader ativo="painel" compacto />
-  <main class="mx-auto max-w-2xl px-4 py-10 md:py-14">
+  <main id="conteudo" class="mx-auto max-w-2xl px-4 py-10 md:py-14">
     <header>
       <p class="text-sm text-suave">
         <a href="/painel" class="font-medium text-tinta underline decoration-acento decoration-2 underline-offset-4">
