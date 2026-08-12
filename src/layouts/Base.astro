@@ -1,0 +1,23 @@
+---
+import "~/styles/global.css";
+
+interface Props {
+  titulo: string;
+  descricao?: string;
+}
+
+const { titulo, descricao = "Alerta de editais e fomento no Diário Oficial de SP para ONGs e projetos sociais." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo}</title>
+    <meta name="description" content={descricao} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

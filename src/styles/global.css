@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/* Tokens canônicos — ver docs/base-de-conhecimentos/frontend/tokens-design.md.
+   Nunca inventar paleta paralela: cor nova entra aqui E no @theme. */
+:root {
+  --fundo: #f7f6f2;
+  --cartao: #ffffff;
+  --tinta: #1a2433;
+  --suave: rgba(26, 36, 51, 0.62);
+  --acento: #2456c9;
+  --acento-forte: #163a8f;
+  --acento-suave: rgba(36, 86, 201, 0.12);
+  --sobre-acento: #ffffff;
+  --prazo: #b45309;
+  --prazo-suave: rgba(180, 83, 9, 0.14);
+  --borda: rgba(26, 36, 51, 0.12);
+  --campo-bg: rgba(26, 36, 51, 0.04);
+  --erro: #b3261e;
+}
+
+/* Tema escuro: acento clareia; texto sobre acento vira tinta escura
+   (contraste AA — nunca assumir branco sobre acento claro). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #12161d;
+    --cartao: #1a212b;
+    --tinta: #e8ebef;
+    --suave: rgba(232, 235, 239, 0.62);
+    --acento: #7da3f5;
+    --acento-forte: #a3bef8;
+    --acento-suave: rgba(125, 163, 245, 0.16);
+    --sobre-acento: #12161d;
+    --prazo: #e8a75c;
+    --prazo-suave: rgba(232, 167, 92, 0.16);
+    --borda: rgba(232, 235, 239, 0.14);
+    --campo-bg: rgba(232, 235, 239, 0.06);
+    --erro: #f2857c;
+  }
+}
+
+[data-theme="dark"] {
+  --fundo: #12161d;
+  --cartao: #1a212b;
+  --tinta: #e8ebef;
+  --suave: rgba(232, 235, 239, 0.62);
+  --acento: #7da3f5;
+  --acento-forte: #a3bef8;
+  --acento-suave: rgba(125, 163, 245, 0.16);
+  --sobre-acento: #12161d;
+  --prazo: #e8a75c;
+  --prazo-suave: rgba(232, 167, 92, 0.16);
+  --borda: rgba(232, 235, 239, 0.14);
+  --campo-bg: rgba(232, 235, 239, 0.06);
+  --erro: #f2857c;
+}
+
+/* Ponte tokens → utilitários Tailwind v4.
+   Só o que está aqui vira classe (bg-cartao, text-tinta, rounded-card…). */
+@theme {
+  --color-fundo: var(--fundo);
+  --color-cartao: var(--cartao);
+  --color-tinta: var(--tinta);
+  --color-suave: var(--suave);
+  --color-acento: var(--acento);
+  --color-acento-forte: var(--acento-forte);
+  --color-acento-suave: var(--acento-suave);
+  --color-sobre-acento: var(--sobre-acento);
+  --color-prazo: var(--prazo);
+  --color-prazo-suave: var(--prazo-suave);
+  --color-borda: var(--borda);
+  --color-campo: var(--campo-bg);
+  --color-erro: var(--erro);
+  --radius-card: 14px;
+  --font-display: "Georgia", "Times New Roman", serif;
+  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--fundo);
+  color: var(--tinta);
+  font-family: var(--font-sans);
+}
