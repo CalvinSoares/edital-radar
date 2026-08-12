@@ -40,11 +40,11 @@ Ao implementar, atualizar este arquivo com o contrato real e remover o ⚠️.
 Login por magic-link: o link do e-mail aponta para página SSR
 (`/entrar/[token]`) que valida, cria sessão e redireciona — não é Action.
 
-## Endpoints (`src/pages/api/`)
+## Endpoints (`src/pages/api/`) — ✔ implementado
 
 | Rota | Contrato |
 |---|---|
-| `POST /api/coleta` | Header de secret (env). Dispara ingestão do dia — idempotente. Chamado pelo cron da Vercel, nunca pela UI. 401 sem secret; 200 com resumo `{ coletados, casados, enviados }` |
+| `GET/POST /api/coleta` | Auth: `Authorization: Bearer <COLETA_SECRET>` (cron da Vercel) ou header `x-coleta-secret` (manual). Query opcional `?data=YYYY-MM-DD` (default: hoje em SP). Idempotente. 401 sem/with secret errado (inclusive se env ausente); 200 com `ResumoDaColeta { dataAlvo, status, totalColetado, paginas, atingiuTeto, erro }`; 500 quando `status === "erro"` |
 
 ---
 

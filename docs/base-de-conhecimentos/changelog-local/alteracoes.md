@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-08-12 — Job de coleta implementado
+
+- `src/server/coleta/`: cliente DOE (retry + Zod na borda), normalização
+  (`parseDataDoe` estrito, offset -03:00 fixo), calendário
+  (`decidirStatus`: 0 em dia útil = erro; 0 em fim de semana = sem_edicao),
+  ingestão paginada com deps injetadas
+- Repositórios: `upsertPublicacoes` (UPSERT por slug) e `registrarExecucao`/
+  `ultimaColeta`
+- `GET/POST /api/coleta` (Bearer do cron da Vercel ou `x-coleta-secret`) +
+  `vercel.json` com cron `30 9 * * 1-5` UTC (6h30 SP)
+- CLI `pnpm coleta:rodar -- [--data=…] [--dry-run]`
+- 14 testes (vitest) incluindo fixture real da API travando o contrato;
+  dry-run completo de 2026-08-12: 3.314 publicações, 34 páginas, zero quebra
+- Pendências da fase Watch: match por keyword, seleção/digest, magic-link
+
 ## 2026-08-12 — Troca de casca: Next → Astro
 
 - Decisão: **Astro 5** no lugar de Next. Motivo: fase Watch tem casca fina e

@@ -42,8 +42,10 @@ leitura obrigatória: `contexto-produto.md` e `regras-sistemicas-ia.md`.
 ## Estado atual
 
 - [x] Fonte validada (DOE-SP API, 10 dias varridos, relatório em `out/`)
-- [ ] Ingestão diária persistida (schema `Publicacao`)
-- [ ] Match por keyword + e-mail (fase Watch)
+- [x] Fundação Astro 5 + tokens + schema Drizzle (5 tabelas)
+- [x] Ingestão diária (cliente Zod + UPSERT por slug + `/api/coleta` + cron) — dry-run real ok
+- [ ] Match por keyword + digest por e-mail (fase Watch)
+- [ ] Cadastro por magic-link + painel de termos
 - [ ] Perfil de entidade + match por causa/região (fase Radar)
 
 ## Rodar a validação

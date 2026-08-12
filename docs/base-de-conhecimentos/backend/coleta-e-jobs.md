@@ -2,22 +2,36 @@
 
 > Job diário de ingestão do DOE-SP: contrato de confiabilidade do produto.
 
-⚠️ **Estado: planejado** — implementação da fase Watch. Atualizar ao implementar.
+**Estado (2026-08-12):** ingestão (passos 1–3 e 7) **implementada e validada**
+com dry-run real (3.314 publicações de 12/08 em 34 páginas, zero falha de
+contrato). Match/seleção/envio (4–6) ⚠️ ainda planejados.
 
 ---
 
 ## Fluxo do job diário
 
 ```
-cron (dia útil, ~6h30 America/Sao_Paulo)
-  └─ 1. Buscar publicações do dia (paginado, PageSize=100)
-     2. Validar cada página com Zod  ── falhou? → falha alto + alerta interno
-     3. Gravar bruto + normalizado (UPSERT por slug)
-     4. Rodar match (função pura) contra keywords/perfis
-     5. Selecionar alertas (dedup por UNIQUE, limites por assinante)
-     6. Enviar e-mails (~7h) e gravar enviado_em na mesma transação
-     7. Registrar execução (quantos coletados, casados, enviados)
+cron (dia útil, ~6h30 America/Sao_Paulo)      → vercel.json: 30 9 * * 1-5 (UTC)
+  └─ 1. Buscar publicações do dia (paginado, PageSize=100)   ✔ cliente-doe.ts
+     2. Validar cada página com Zod ── falhou? → falha alto   ✔ (schema no cliente)
+     3. Gravar bruto + normalizado (UPSERT por slug)          ✔ ingerir.ts + repositório
+     4. Rodar match (função pura) contra keywords/perfis      ⚠️ próximo
+     5. Selecionar alertas (dedup por UNIQUE, limites)        ⚠️
+     6. Enviar e-mails (~7h), enviado_em na mesma transação   ⚠️
+     7. Registrar execução em coleta_execucao                 ✔ sempre, inclusive em erro
 ```
+
+## Arquivos
+
+| Arquivo | Papel |
+|---|---|
+| `src/server/coleta/cliente-doe.ts` | Fetch + retry/backoff + Zod na borda (`PaginaDeBuscaSchema`) |
+| `src/server/coleta/normalizar.ts` | Item → row; `parseDataDoe` (formato estrito, offset -03:00) |
+| `src/server/coleta/calendario.ts` | `hojeEmSaoPaulo`, `ehFimDeSemana`, `decidirStatus` |
+| `src/server/coleta/ingerir.ts` | Orquestração paginada; deps injetadas (testável sem banco) |
+| `src/pages/api/coleta.ts` | Endpoint do cron (Bearer/`x-coleta-secret`); import tardio do db |
+| `scripts/coleta-rodar.ts` | CLI: `pnpm coleta:rodar -- --data=YYYY-MM-DD [--dry-run]` |
+| `fixtures/doe/pagina-busca-*.json` | Resposta real da API — trava o contrato no teste |
 
 ## Invariantes do job
 

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -12,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "validar:doe": "node pipeline/validate-doe-sp.mjs"
+    "validar:doe": "node pipeline/validate-doe-sp.mjs",
+    "test": "vitest run",
+    "coleta:rodar": "tsx scripts/coleta-rodar.ts"
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
@@ -27,11 +31,14 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@tailwindcss/vite": "^4.1.0",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "drizzle-kit": "^0.31.0",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.3"
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
   },
   "packageManager": "pnpm@10.30.1"
 }
