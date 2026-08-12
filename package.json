@@ -1,0 +1,6 @@
+{
+  "name": "edital-radar",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
