@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-08-12 — Motor de match por keyword
+
+- `src/server/match/`: `casarKeywords` (pura) + `normalizarPreservandoIndices`
+  (baixa caixa e tira acento SEM mudar o comprimento — índice do match vale
+  no texto original, de onde sai o trecho do e-mail)
+- Regras: fronteira de palavra, acento/caixa-insensível, espaços flexíveis,
+  prioridade título > excerpt > content, termo < 3 letras ignorado
+- 8 casos rotulados em `fixtures/rotulados/match-keywords.json` (2 reais);
+  29 testes no total
+- Provado em dado real (`pipeline/provar-match.ts`): 3.315 publicações de
+  12/08, 14 matches com trecho legível
+- **Decisão pendente registrada**: match título+excerpt subconta vs.
+  full-text da API (~9 × 11–24/dia) — resolver antes do digest
+  (recomendação: busca `Terms` por termo único + detalhe dos hits)
+
 ## 2026-08-12 — Job de coleta implementado
 
 - `src/server/coleta/`: cliente DOE (retry + Zod na borda), normalização

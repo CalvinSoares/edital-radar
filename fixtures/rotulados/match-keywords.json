@@ -1,0 +1,93 @@
+{
+  "comentario": "Casos rotulados do match por keyword. Regra nova no motor só entra com caso novo aqui. Excerpts marcados como 'real' vieram de publicações reais do DOE-SP (2026-08).",
+  "casos": [
+    {
+      "nome": "real: chamamento público com acento no texto, termo sem acento",
+      "origem": "real",
+      "publicacao": {
+        "slug": "executivo/secretaria-de-desenvolvimento-social/extrato-de-aditamento-convenio-de-31-de-julho-de-2026-20260731131912002018090",
+        "titulo": "EXTRATO DE ADITAMENTO - CONVÊNIO, DE 31 DE JULHO DE 2026",
+        "excerpt": "A Diretoria de Combate à Fome - DICOF, Torna Público o extrato do aditamento do termo de colaboração celebrado, por decorrência do Chamamento Público nº 003/2019. Colaboração – Organizações Sociais Processo SEDS nº 012.00002421/2023-86"
+      },
+      "termo": "chamamento publico",
+      "esperado": { "casa": true, "campo": "excerpt" }
+    },
+    {
+      "nome": "real: termo de colaboração casa mesmo com caixa diferente",
+      "origem": "real",
+      "publicacao": {
+        "slug": "executivo/secretaria-de-desenvolvimento-social/extrato-de-aditamento-convenio-de-31-de-julho-de-2026-20260731131912002018090",
+        "titulo": "EXTRATO DE ADITAMENTO - CONVÊNIO, DE 31 DE JULHO DE 2026",
+        "excerpt": "A Diretoria de Combate à Fome - DICOF, Torna Público o extrato do aditamento do termo de colaboração celebrado, por decorrência do Chamamento Público nº 003/2019."
+      },
+      "termo": "TERMO DE COLABORAÇÃO",
+      "esperado": { "casa": true, "campo": "excerpt" }
+    },
+    {
+      "nome": "fronteira de palavra: 'arte' não casa em 'parte'",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/fronteira",
+        "titulo": "DESPACHO SOBRE PARTE DO PROCESSO",
+        "excerpt": "A parte interessada apresentou recurso dentro do prazo legal."
+      },
+      "termo": "arte",
+      "esperado": { "casa": false }
+    },
+    {
+      "nome": "cedilha: 'licitacao' casa 'LICITAÇÃO'",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/cedilha",
+        "titulo": "AVISO DE LICITAÇÃO",
+        "excerpt": null
+      },
+      "termo": "licitacao",
+      "esperado": { "casa": true, "campo": "titulo" }
+    },
+    {
+      "nome": "termo multi-palavra casa com espaços múltiplos e quebra de linha",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/espacos",
+        "titulo": "EDITAL",
+        "excerpt": "Fica aberto o edital  de\nfomento para projetos culturais do interior."
+      },
+      "termo": "edital de fomento",
+      "esperado": { "casa": true, "campo": "excerpt" }
+    },
+    {
+      "nome": "prioridade de campo: casa no título quando aparece nos dois",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/prioridade",
+        "titulo": "CHAMAMENTO PÚBLICO Nº 14/2026",
+        "excerpt": "Torna público o chamamento público para seleção de organizações."
+      },
+      "termo": "chamamento público",
+      "esperado": { "casa": true, "campo": "titulo" }
+    },
+    {
+      "nome": "termo curto demais (< 3 letras) é ignorado, nunca casa",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/curto",
+        "titulo": "DECRETO DE 11 DE AGOSTO DE 2026",
+        "excerpt": "Dispõe sobre a organização de comissão."
+      },
+      "termo": "de",
+      "esperado": { "casa": false }
+    },
+    {
+      "nome": "nome próprio de ONG casa exato",
+      "origem": "sintetico",
+      "publicacao": {
+        "slug": "teste/ong",
+        "titulo": "EXTRATO DE TERMO DE FOMENTO",
+        "excerpt": "Organização da Sociedade Civil: Associação Casa de Apoio Romeiros de Nossa Senhora Aparecida, CNPJ 00.000.000/0001-00."
+      },
+      "termo": "associação casa de apoio romeiros",
+      "esperado": { "casa": true, "campo": "excerpt" }
+    }
+  ]
+}
