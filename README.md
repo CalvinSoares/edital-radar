@@ -10,6 +10,9 @@ Produto em fases (um repo, uma marca):
 2. **Radar** (pago): perfil da ONG (causa + região) → match inteligente com resumo.
 3. **Tradutor** (retenção): edital → checklist de prazo, documentos e elegibilidade.
 
+Roadmap expandido (backoffice, SEO 2, feedback, WhatsApp, B2B federação,
+outros estados): [`docs/base-de-conhecimentos/roadmap.md`](docs/base-de-conhecimentos/roadmap.md).
+
 ## Checklist de fundação (seção 8 do doc de ideias)
 
 1. **Quem é a pessoa / job:** coordenador(a) de ONG pequena que não pode
@@ -41,17 +44,33 @@ leitura obrigatória: `contexto-produto.md` e `regras-sistemicas-ia.md`.
 
 ## Estado atual
 
+### Feito (código)
 - [x] Fonte validada (DOE-SP API, 10 dias varridos, relatório em `out/`)
-- [x] Fundação Astro 5 + tokens + schema Drizzle (5 tabelas)
-- [x] Ingestão diária (cliente Zod + UPSERT por slug + `/api/coleta` + cron) — dry-run real ok
-- [x] Motor de match por keyword (puro, fronteira de palavra, fixtures rotuladas) — provado no DOE real
-- [x] Cobertura full-text (detalhe de tudo + match local; 13/13 vs gabarito da API, ~10s/dia) + criação de alertas
-- [x] Digest por e-mail (1/assinante, máx 10, termo destacado, dry-run por env) + descadastro em 1 clique
-- [x] Magic-link (uso único, 15 min) + sessão por cookie + painel de termos e avisos
-- [ ] Provisionar produção (Postgres, Vercel, Resend, domínio) e rodar migração
-- [ ] Webhook de bounce → supressão automática
-- [ ] Cadastro por magic-link + painel de termos
-- [ ] Perfil de entidade + match por causa/região (fase Radar)
+- [x] Fundação Astro 5 + tokens + schema Drizzle
+- [x] Ingestão diária (cliente Zod + UPSERT por slug + `/api/coleta` + cron)
+- [x] Motor de match por keyword + full-text + filtro de oportunidade aberta
+- [x] Digest por e-mail (Resend dry-run) + descadastro + magic-link + painel
+- [x] SEO `/temas` + `/municipios` + status público + onboarding de termos
+- [x] SEO meta: OG/Twitter, canonical, noindex privado, JSON-LD, `/og.png`
+- [x] Webhook Resend + alarme do job + backoffice `/admin`
+- [x] Feedback "não era pra mim" + histórico no painel
+- [x] Radar núcleo (perfil + prazo + resumo; admin promove)
+- [x] Pasta salvos + conta compartilhada (equipe) + federação
+
+### Agora — validar e reter (Stripe adiado)
+- [ ] **Deploy produção** (Vercel + Postgres + domínio + envs + cron)
+- [ ] **Resend real** + webhook Svix em produção + `ALARME_EMAIL`
+- [x] Piloto ops (`/admin/piloto` + guia `piloto.md`) — executar com ONGs reais
+- [x] Digest vazio 1×/semana + aviso de retificação
+- [x] Tradutor 1ª fatia: checklist “Serve pra mim?”
+- [x] Fila de feedbacks com classificação + mais fixtures rotulados
+
+### Depois (quando houver demanda)
+- [ ] Stripe (billing Radar) — ativação hoje é manual via admin
+- [ ] Tradutor fatias seguintes (docs, timeline, leitura)
+- [ ] WhatsApp digest / outros estados / PNCP (horizonte D)
+
+Roadmap completo: [`docs/base-de-conhecimentos/roadmap.md`](docs/base-de-conhecimentos/roadmap.md).
 
 ## Rodar a validação
 
@@ -65,10 +84,10 @@ seções mais frequentes e amostras.
 ## Observações da validação (2026-08-12)
 
 - O resultado de busca mistura **edital aberto** com **extrato de dispensa /
-  resultado de edital antigo**. Separar "oportunidade aberta" de "burocracia
-  sobre edital passado" é o core do motor de match (tipo de publicação +
-  seção + regex de prazo).
+  resultado de edital antigo**. O filtro `ehOportunidadeAberta` (título)
+  bloqueia extrato/resultado/anulação/homologação nos **alertas**; as páginas
+  SEO por tema continuam mostrando o que saiu no DOE.
 - Seções mais férteis: Ciência/Tecnologia, Esportes, Desenvolvimento Social,
   Casa Civil — bom guia para as três causas do MVP.
 - `hierarchy` e `publicationTypeId` vêm estruturados na API — dá para
-  filtrar por seção sem NLP.
+  filtrar por seção sem NLP (fase Radar).

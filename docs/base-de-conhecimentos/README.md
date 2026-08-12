@@ -22,6 +22,7 @@ base-de-conhecimentos/
 ├── README.md                          ← este arquivo
 │
 ├── contexto-produto.md                ← ⭐ LEITURA OBRIGATÓRIA — produto, fases, usuário
+├── roadmap.md                         ← Expansão: Watch maduro → Radar → Tradutor → canais
 ├── regras-sistemicas-ia.md            ← ⭐ LEITURA OBRIGATÓRIA — invariantes, metodologia
 │
 ├── arquitetura/
@@ -53,6 +54,9 @@ base-de-conhecimentos/
 | Precisa de... | Vá para... |
 |---|---|
 | Entender o produto | `contexto-produto.md` |
+| Roadmap / próximas features | `roadmap.md` |
+| Piloto ONGs/federações | `piloto.md` |
+| Segurança / vista admin / rate limit | `seguranca.md` |
 | Invariantes / metodologia | `regras-sistemicas-ia.md` |
 | Criar uma nova page | `frontend/padrao-por-pagina.md` |
 | Tokens / cores / fontes | `frontend/tokens-design.md` |

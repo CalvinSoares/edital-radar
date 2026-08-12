@@ -2,8 +2,8 @@
 
 > Da publicação coletada ao e-mail na caixa da ONG.
 
-**Estado (2026-08-12):** motor de match **implementado** (`src/server/match/`),
-29 testes + 8 casos rotulados. Seleção, digest e envio ⚠️ planejados.
+**Estado (2026-08-12):** motor de match, seleção, digest, envio, filtro de
+oportunidade aberta e webhook de bounce **implementados**.
 
 ---
 
@@ -21,6 +21,18 @@
 - A função de match é **pura** (`casarKeywords`): entrada publicação +
   keywords, saída lista de pares — sem I/O, sem Date, sem env
 - Regra nova só entra com caso em `fixtures/rotulados/match-keywords.json`
+
+### Filtro de oportunidade aberta ✔ (Watch)
+
+Antes de virar alerta, o título passa por `ehOportunidadeAberta`
+(`src/server/match/oportunidade-aberta.ts`):
+
+- Bloqueia: extrato, resultado, anulação, retificação, homologação,
+  adjudicação, rescisão, indeferimento, inexigibilidade, dispensa de
+  chamamento, prestação de contas, termo aditivo / aditamento
+- **Não** aplica à classificação SEO por tema — páginas `/temas` mostram o
+  que saiu no DOE, inclusive burocracia
+- Casos rotulados em `fixtures/rotulados/oportunidade-aberta.json`
 
 ### Cobertura full-text — DECIDIDA e implementada (2026-08-12)
 
@@ -65,8 +77,9 @@ O match roda sobre o **texto completo** de toda publicação do dia
   valor é dry-run que loga e não envia. Headers `List-Unsubscribe` incluídos
 - Descadastro: token uuid por assinante → página `/descadastrar/[token]`
   (idempotente; token inválido = 404)
-- ⚠️ Pendentes: webhook de bounce/reclamação → supressão automática;
-  painel para ver o excedente
+- Webhook ✔: `POST /api/resend-webhook` (Svix) — bounce **Permanent**,
+  `email.complained`, `email.suppressed`, `suppression.added` →
+  `suprimirPorEmails` (permanente; soft bounce NÃO suprime)
 
 ## Seleção (o que vira e-mail)
 
@@ -75,6 +88,7 @@ O match roda sobre o **texto completo** de toda publicação do dia
    "e mais N publicações no seu painel")
 3. Assinante suprimido (bounce/reclamação) nunca recebe
 4. Free: máx 3 keywords; excedente bloqueado no cadastro, não na seleção
+5. Título precisa passar em `ehOportunidadeAberta`
 
 ## O e-mail
 
@@ -96,21 +110,24 @@ Rodapé fixo:
 
 Sem PDF anexo. Sem promessa de resultado. Sem jargão no assunto.
 
-## Fase Radar (pago) — match por perfil ⚠️ futuro
+## Fase Radar (pago) — match por perfil ✔ (billing adiado)
 
-- Perfil: causas (catálogo fechado, estilo catálogo de ramos do state-sell)
-  + regiões
-- Filtro de **tipo**: só publicação que é *oportunidade aberta*
-  (`publicationTypeId` + seção + regex de prazo) — extrato de dispensa e
-  resultado de edital antigo **não** geram alerta
-- Prazo extraído sempre acompanhado do trecho original que o sustenta
-- Nunca alertar oportunidade com prazo já encerrado; com menos de 48h,
-  destacar urgência
+- Perfil: causas + regiões (`perfil_radar`, catálogo fechado)
+- Match: causa AND região + `ehOportunidadeAberta`; sem LLM
+- Prazo extraído com trecho-fonte; vencido não alerta; &lt;48h destacado no painel
+- Resumo template (título + órgão + causa/região + excerpt)
+- Salvos, equipe (fan-out) e federação (assentos) — ver roadmap B
+- Ativação: admin promove plano; **Stripe adiado** até validar + reter
+
+**Próximo (produto):** Tradutor fatias seguintes (docs/timeline). **Próximo (ops):**
+deploy + Resend real + executar piloto (`/admin/piloto`).
+Digest vazio (sexta) e retificação (nº/ano) ✔.
 
 ## Métricas de qualidade
 
 - Conjunto rotulado em `fixtures/rotulados/` (publicação → é/não é
-  oportunidade para o perfil X)
+  oportunidade; match de keywords)
 - Precisão no conjunto rotulado trava o CI quando cair abaixo da meta
   (meta inicial: 0,95, herdada do state-sell)
-- Feedback no e-mail/painel: "isso não era pra mim" alimenta os rótulos
+- Feedback no painel ✔: "isso não era pra mim" (`alerta.irrelevante_em`)
+  alimenta a fila `/admin/feedbacks` para revisar regras

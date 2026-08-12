@@ -115,9 +115,13 @@ palavra significa? Então a tela está errada.
 
 ## SEO (páginas públicas)
 
-- `prerender = true` + `<title>`/description próprios por página
-- Página programática (ex.: publicações do dia por tema) é conteúdo de
-  produto: URL estável, heading claro, data visível, link para a fonte
+- `<title>` + `description` próprios por página (via `Base`)
+- `canonical` absoluto (`SITE_URL` + pathname)
+- Open Graph + Twitter (`og:*`, `twitter:card=summary_large_image`, imagem `/og.png`)
+- `robots`: `index,follow` no público; `noindex,nofollow` em painel/admin/entrar/convite/descadastro (auto por path ou `indexavel={false}`)
+- JSON-LD opcional (`jsonLd` prop) — home (Organization + WebSite), listagens
+- Página programática: URL estável, heading claro, data visível, link pra fonte
+- `robots.txt` + `/sitemap.xml` (temas, municípios, cruzamentos)
 
 ---
 

@@ -31,14 +31,22 @@ pararia para perguntar o que uma palavra significa, a tela está errada.
 O Watch **não** é produto separado: é o plano free do Radar. Não criar
 segunda marca/domínio/landing.
 
-## O que fica explicitamente fora do v1
+Expansão detalhada (backoffice, SEO 2, WhatsApp, B2B federação, outros
+estados, melhorias técnicas): ver **`roadmap.md`**.
+
+**Estado (2026-08-12):** Watch + Radar (sem Stripe) estão no código.
+Próximo foco: **produção + validar precisão + reter** (Tradutor). Cobrança
+online só depois — ativação Radar hoje é manual no admin.
+
+## O que fica explicitamente fora do v1 (Watch)
 
 - Outros estados (só SP)
-- PNCP como fonte (fase 2+; o state-sell já cobre PNCP para outro público)
+- PNCP como fonte (roadmap D; o state-sell já cobre PNCP para outro público)
 - App mobile
 - "Gerar projeto com IA"
-- Classificação por LLM (v1 = regra determinística + keyword)
-- Qualquer processamento de pagamento próprio
+- Classificação por LLM sem meta de precisão medida
+- Qualquer processamento de pagamento (entra no Radar)
+- Backoffice público / self-service admin para terceiros
 
 ## Fonte de dados (validada em 2026-08-12)
 
@@ -65,3 +73,5 @@ do job, e disclaimer fixo em todo alerta:
 
 SEO ("alerta diário oficial SP", "edital de fomento SP"), grupos de WhatsApp
 de OSC, federações e conselhos (CONDECA, COMAS), indicação entre ONGs.
+
+Canal futuro no próprio produto: digest WhatsApp (opt-in) — ver roadmap D.

@@ -79,7 +79,8 @@ mudar (de volta a Next, ou outra), o núcleo migra intacto.
 
 | Página | Modo |
 |---|---|
-| Landing, páginas SEO públicas | `prerender = true` (estático na CDN) |
+| Landing | `prerender = true` (estático na CDN) |
+| Páginas SEO (`/temas`) | SSR + `Cache-Control` (lista muda todo dia útil; CDN cacheia 1h) |
 | Painel, cadastro, magic-link | SSR (serverless) |
 | `/api/coleta` | Endpoint SSR protegido por secret (cron) |
 

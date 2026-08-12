@@ -5,6 +5,170 @@
 
 ---
 
+## 2026-08-12 — SEO meta: OG, canonical, noindex, JSON-LD
+
+- `Base.astro`: canonical, robots, Open Graph + Twitter, `/og.png`
+- `noindex` automático em painel/admin/entrar/convite/descadastro
+- JSON-LD na home (Organization + WebSite) e listagens temas/municípios
+- Docs SEO em `padrao-por-pagina.md`
+
+## 2026-08-12 — Piloto grátis: sem limite de assuntos + copy
+
+- Sem teto free/Radar de keywords (anti-abuso 50); perfil causa/região e
+  equipe liberados pra todo mundo no piloto
+- UI: “termos” → “o que você acompanha” / assuntos
+- Federação: texto no admin — só lote B2B interno sem Stripe
+
+## 2026-08-12 — Vista admin + hardening de segurança
+
+- Admin **ver** no assinante → painel na visão dele (`er_vista`, 1h, só
+  leitura; barra + sair da vista)
+- Rate limit login (IP/e-mail) e admin entrar; cookie admin = HMAC (não
+  secret cru); compare timing-safe (admin + coleta)
+- Sessão ignora suprimido/descadastrado; magic-link não envia se bounce
+- Equipe: vista admin não cria equipe ao abrir a página
+- Doc: `docs/.../seguranca.md`
+
+## 2026-08-12 — Acessibilidade + marca radar + cards sem faixa
+
+- CTA ink+creme (AA); texto suave ~72%; gradiente de fundo único
+- `BrandMark` SVG no header (remove “ER”); focus-visible / aria-current
+- Cards com sombra “papel deslocado”, sem barra lateral
+
+## 2026-08-12 — Paleta ColorHunt sea/clay + favicon
+
+- Tokens: `#0F3040 / #464858 / #A56F63 / #D99B7F` (fundo peach `#F4EBE6`)
+- Favicon + apple-touch (radar SVG); theme-color `#0F3040`
+- Home com painel hero e anéis decorativos; mark ER do header mantido
+
+## 2026-08-12 — Piloto, feedbacks, digest vazio, retificação, Tradutor 1
+
+- Piloto: `/admin/piloto` + `docs/.../piloto.md` (precisão + retorno)
+- Feedbacks: classificar (`falso_positivo_filtro` / termo / catálogo /
+  descartado) → guia para fixture antes de mudar regra
+- Fixtures: mais rótulos em `oportunidade-aberta.json` + `retificacao.json`;
+  BLOQUEIOS ganha `republica`
+- Digest vazio: sexta-feira, 1×/semana (`digest_vazio_envio`)
+- Retificação: alerta `tipo=retificacao` só se nº/ano casa com alerta anterior
+- Tradutor 1ª fatia: checklist “Serve pra mim?” em `/painel/tradutor/[id]`
+
+## 2026-08-12 — Refino visual: ink + âmbar
+
+- Nova paleta `#14213D` / `#FCA311` / `#E5E5E5` (substitui teal)
+- Tipografia Syne + Plus Jakarta Sans; raio `rounded-sm`
+- `SiteHeader` sticky com marca ER; cards `.er-card` com faixa âmbar
+- CTA com tinta escura sobre âmbar (AA); docs em `tokens-design.md`
+
+## 2026-08-12 — Docs: Stripe adiado; foco validar + reter
+
+- Decisão: **não** aplicar Stripe agora — validar precisão e reter antes
+- `roadmap.md`: seção “Agora — Validar e reter”; ordem de ataque revisada
+  (deploy → piloto → Watch A → Tradutor → Stripe → canais)
+- README checklist: salvos/equipe/federação ✔; próximos = ops + piloto +
+  Tradutor; Stripe em “depois”
+- Contratos: Actions Radar/equipe/federação; `contexto-produto` e
+  `match-e-alertas` alinhados
+
+## 2026-08-12 — Redesign visual (teal + carvão)
+
+- Paleta ColorHunt `#222831 / #393E46 / #00ADB5 / #EEEEEE` nos tokens
+  (`global.css` + `tokens-design.md`); dark mapeado para a mesma família
+- Tipografia: Fraunces (display) + Figtree (body); fundo com radial teal
+- Motion: `er-rise`, `er-radar-pulse`, `er-dot-live`, `er-lift` (+ reduced-motion)
+- Home brand-first; copy mais falada em páginas públicas, painel e admin
+- Componentes Button/Card/Field com focus ring e hover alinhados
+
+## 2026-08-12 — Salvos, equipe compartilhada e federação
+
+- Schema: `salvo`; `equipe` / `equipe_membro` / `equipe_convite`; `federacao` /
+  `federacao_assento` / `federacao_convite`; plano `federacao`
+- Pasta: salvar do histórico → `/painel/salvos`
+- Equipe Radar: até 3 pessoas; convite por e-mail (`/convite/equipe/[token]`);
+  fan-out de alertas do dono para membros
+- Federação: admin cria em `/admin/federacoes`; admin da rede convida assentos
+  em `/painel/federacao`; aceite em `/convite/federacao/[token]` → plano radar
+- Stripe ainda pendente
+
+## 2026-08-12 — Radar: perfil causa+região, prazo e resumo
+
+- Schema: `perfil_radar` (causas/regiões JSONB); `alerta.origem/resumo/prazo_*`
+- Catálogo fechado de causas e regiões; `casarPerfil` (causa AND região +
+  oportunidade aberta); `extrairPrazo` + `resumirOportunidade` (template)
+- Job: `listarPerfis` → match na mesma passada; prazo vencido não vira alerta
+- Painel: formulário de perfil (plano Radar); avisos com resumo/prazo
+- Admin: `→ Radar` (`promoverRadar`); limite de termos Radar = 10
+- Billing Stripe ainda pendente — ativação manual via admin
+
+## 2026-08-12 — Status público, onboarding e SEO 2
+
+- `/status` — última leitura do DOE (SLA público); badge na landing
+- Onboarding: sugestões de termos no painel (catálogo + causas) enquanto &lt; 3
+- SEO: `/municipios`, `/municipios/[slug]`, `/temas/[tema]/[municipio]`;
+  `[tema].astro` virou `[tema]/index.astro`; sitemap inclui municípios
+- Roadmap A (exceto digest vazio) ✔
+
+## 2026-08-12 — Feedback "não era pra mim" + histórico do painel
+
+- Schema: `alerta.irrelevante_em` — feedback do assinante (idempotente)
+- Action `alerta.marcarIrrelevante`; aviso marcado sai do digest pendente
+- Painel: histórico paginado (`?pagina=`), agrupado por dia, botão de
+  feedback; admin `/admin/feedbacks` + contador no resumo
+- Roadmap A: feedback + histórico marcados ✔
+
+## 2026-08-12 — Backoffice interno (/admin)
+
+- Auth `ADMIN_SECRET` → cookie httpOnly `er_admin` (Actions `admin.entrar` /
+  `sair` / `suprimir`)
+- Páginas: `/admin` (resumo), `/admin/assinantes` (busca + termos +
+  suprimir), `/admin/coletas` (execuções do job)
+- Repositório `db/repositorios/admin.ts`; `robots.txt` bloqueia `/admin`
+- Sem secret no env: login mostra "desligado". Roadmap A marcado ✔
+
+## 2026-08-12 — Roadmap de expansão documentado
+
+- Novo `docs/base-de-conhecimentos/roadmap.md`: horizontes A–D (Watch
+  maduro, Radar, Tradutor, canais/cobertura) + backoffice interno +
+  ordem de ataque + fora de escopo
+- Itens novos no plano: feedback "não era pra mim", aviso de retificação,
+  onboarding de termos, SEO por município/órgão, status público do job,
+  pasta salvos, conta compartilhada, plano Federação, checklist/tradutor,
+  WhatsApp opt-in, outros estados, PNCP filtrado, API read-only
+- `contexto-produto.md` e README apontam para o roadmap; checklist ganhou
+  backoffice interno como próximo após deploy
+
+## 2026-08-12 — Watch: bounce, alarme do job, oportunidade aberta
+
+- **Webhook Resend** `POST /api/resend-webhook`: verifica Svix (crypto
+  nativo), suprime em bounce Permanent / complained / suppressed /
+  suppression.added (`suprimirPorEmails`, permanente e idempotente). Soft
+  bounce NÃO suprime. Env: `RESEND_WEBHOOK_SECRET`
+- **Alarme do job**: `precisaAlarme` + `renderizarAlarme`; `rodarDia`
+  notifica em todo `status=erro` (0 pubs em dia útil, falha de detalhe,
+  provedor…). Destinatário `ALARME_EMAIL` (sem ele, só log + HTTP 500)
+- **Filtro oportunidade aberta** (`ehOportunidadeAberta`): extrato /
+  resultado / anulação / homologação / etc. não viram alerta de assinante;
+  temas SEO **não** filtram. Fixtures em
+  `fixtures/rotulados/oportunidade-aberta.json`
+- README checklist atualizado (Watch de código fechado; falta só deploy +
+  Resend real). Docs: match-e-alertas, coleta-e-jobs, api-contracts
+
+## 2026-08-12 — Páginas SEO programáticas por tema
+
+- Schema: `publicacao_tema` (UNIQUE publicacao+tema) — classificação
+  persistida na mesma passada do match full-text, sem custo extra de API
+- Catálogo fixo em `src/server/match/temas.ts` (5 temas: chamamento,
+  fomento, colaboração, sociedade civil, credenciamento); termos revisados
+  usam o mesmo motor dos assinantes
+- Páginas: `/temas` (índice com contagem 30d) e `/temas/[slug]` (lista 15d
+  agrupada por dia + CTA de cadastro); SSR + cache CDN 5min/1h
+- Job: `casarDia` recebe temas → `temasCasados`; `rodarDia` persiste via
+  `salvarTemas`; páginas SEO não dependem de assinante
+- `sitemap.xml` + `robots.txt` (bloqueia painel/entrar/descadastro)
+- Verificado com dados reais: 82 classificações (72 credenciamento, 5
+  chamamento, 2 fomento, 2 colaboração, 1 sociedade-civil); slug inválido
+  responde 404 (não rewrite — ForbiddenRewrite no Astro)
+- 51 testes
+
 ## 2026-08-12 — Primeiro E2E real com banco provisionado ✅
 
 - Postgres provisionado + `pnpm db:push` (7 tabelas criadas)
