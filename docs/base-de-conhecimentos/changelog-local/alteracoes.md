@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-08-12 — Primeiro E2E real com banco provisionado ✅
+
+- Postgres provisionado + `pnpm db:push` (7 tabelas criadas)
+- Fluxo completo verificado com dados reais, tudo em dry-run de e-mail:
+  cadastro → magic-link (2º clique no link = 410, uso único confirmado na
+  prática) → sessão → termo "chamamento publico" → `POST /api/coleta` →
+  **3.316 publicações ingeridas, 8 matches full-text, 6 alertas criados,
+  1 digest** ("6 publicações com seus termos — DOE-SP, 12/08") → painel
+  mostrando os 6 avisos e "Última leitura: 12/08 às 12:38"
+- Observação: 8 matches → 6 alertas é a paginação do DOE se movendo durante
+  a coleta (publicação repetida entre páginas) — o UNIQUE deduplicou como
+  projetado
+- Nota dev: o Vite recarrega o `.env` sozinho; scripts tsx precisam de
+  `--env-file=.env` (helper `pipeline/ultimo-login-token.ts`)
+- Pendente para produção: Vercel (deploy + envs + cron), Resend (API key +
+  domínio verificado + RESEND_MODE=real), SITE_URL público
+
 ## 2026-08-12 — Magic-link, sessão e painel (primeiras Actions/páginas)
 
 - Schema: `login_token` (uso único atômico, 15 min) e `sessao` (30 dias,
