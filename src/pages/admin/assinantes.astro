@@ -1,6 +1,7 @@
 ---
 import { actions } from "astro:actions";
 import Admin from "~/layouts/Admin.astro";
+import Badge from "~/components/ui/Badge.astro";
 import { adminAutenticado } from "~/shared/admin";
 
 export const prerender = false;
@@ -30,10 +31,10 @@ const formato = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 });
 
-const corStatus: Record<string, string> = {
-  ativo: "text-acento",
-  descadastrado: "text-suave",
-  suprimido: "text-erro",
+const varianteStatus: Record<string, "ok" | "neutro" | "urgente"> = {
+  ativo: "ok",
+  descadastrado: "neutro",
+  suprimido: "urgente",
 };
 ---
 
@@ -55,30 +56,32 @@ const corStatus: Record<string, string> = {
       <p class="mt-8 text-suave">Nenhum assinante encontrado.</p>
     ) : (
       <div class="mt-6 overflow-x-auto er-card-quiet">
-        <table class="w-full min-w-[640px] text-left text-sm">
-          <thead class="border-b border-borda text-suave">
+        <table class="er-table min-w-[640px]">
+          <thead>
             <tr>
-              <th class="px-4 py-3 font-semibold">E-mail</th>
-              <th class="px-4 py-3 font-semibold">Plano</th>
-              <th class="px-4 py-3 font-semibold">Status</th>
-              <th class="px-4 py-3 font-semibold">Termos</th>
-              <th class="px-4 py-3 font-semibold">Alertas</th>
-              <th class="px-4 py-3 font-semibold">Desde</th>
-              <th class="px-4 py-3 font-semibold" />
+              <th>E-mail</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Termos</th>
+              <th>Alertas</th>
+              <th>Desde</th>
+              <th><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody>
             {lista.map((a) => (
-              <tr class="border-b border-borda last:border-0">
-                <td class="px-4 py-3 font-medium">{a.email}</td>
-                <td class="px-4 py-3">{a.plano}</td>
-                <td class={`px-4 py-3 capitalize ${corStatus[a.status]}`}>{a.status}</td>
-                <td class="px-4 py-3 text-suave">
+              <tr>
+                <td class="font-medium">{a.email}</td>
+                <td class="capitalize">{a.plano}</td>
+                <td>
+                  <Badge variante={varianteStatus[a.status] ?? "neutro"}>{a.status}</Badge>
+                </td>
+                <td class="text-suave">
                   {a.termos.length === 0 ? "—" : a.termos.join(", ")}
                 </td>
-                <td class="px-4 py-3">{a.totalAlertas}</td>
-                <td class="px-4 py-3 text-suave">{formato.format(a.criadoEm)}</td>
-                <td class="px-4 py-3 text-right">
+                <td class="tabular-nums">{a.totalAlertas}</td>
+                <td class="whitespace-nowrap text-suave">{formato.format(a.criadoEm)}</td>
+                <td class="text-right">
                   <div class="flex flex-col items-end gap-1">
                     <form method="POST" action={actions.admin.verComo}>
                         <input type="hidden" name="id" value={a.id} />

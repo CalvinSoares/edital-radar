@@ -1,6 +1,7 @@
 ---
 import { actions } from "astro:actions";
 import Admin from "~/layouts/Admin.astro";
+import Badge from "~/components/ui/Badge.astro";
 import { adminAutenticado } from "~/shared/admin";
 
 export const prerender = false;
@@ -24,10 +25,10 @@ const formato = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 });
 
-const corStatus: Record<string, string> = {
-  ok: "text-acento",
-  sem_edicao: "text-suave",
-  erro: "text-erro",
+const varianteStatus: Record<string, "ok" | "neutro" | "urgente"> = {
+  ok: "ok",
+  sem_edicao: "neutro",
+  erro: "urgente",
 };
 ---
 
@@ -37,28 +38,30 @@ const corStatus: Record<string, string> = {
       <p class="mt-8 text-suave">Nenhuma execução registrada.</p>
     ) : (
       <div class="mt-6 overflow-x-auto er-card-quiet">
-        <table class="w-full min-w-[720px] text-left text-sm">
-          <thead class="border-b border-borda text-suave">
+        <table class="er-table min-w-[720px]">
+          <thead>
             <tr>
-              <th class="px-4 py-3 font-semibold">Quando</th>
-              <th class="px-4 py-3 font-semibold">Dia alvo</th>
-              <th class="px-4 py-3 font-semibold">Status</th>
-              <th class="px-4 py-3 font-semibold">Coletado</th>
-              <th class="px-4 py-3 font-semibold">Casado</th>
-              <th class="px-4 py-3 font-semibold">Enviado</th>
-              <th class="px-4 py-3 font-semibold">Erro</th>
+              <th>Quando</th>
+              <th>Dia alvo</th>
+              <th>Status</th>
+              <th>Coletado</th>
+              <th>Casado</th>
+              <th>Enviado</th>
+              <th>Erro</th>
             </tr>
           </thead>
           <tbody>
             {lista.map((c) => (
-              <tr class="border-b border-borda last:border-0">
-                <td class="px-4 py-3 text-suave">{formato.format(c.executadoEm)}</td>
-                <td class="px-4 py-3 font-medium">{c.dataAlvo}</td>
-                <td class={`px-4 py-3 ${corStatus[c.status] ?? ""}`}>{c.status}</td>
-                <td class="px-4 py-3">{c.totalColetado}</td>
-                <td class="px-4 py-3">{c.totalCasado}</td>
-                <td class="px-4 py-3">{c.totalEnviado}</td>
-                <td class="max-w-xs truncate px-4 py-3 text-suave" title={c.erro ?? undefined}>
+              <tr>
+                <td class="whitespace-nowrap text-suave">{formato.format(c.executadoEm)}</td>
+                <td class="font-medium">{c.dataAlvo}</td>
+                <td>
+                  <Badge variante={varianteStatus[c.status] ?? "neutro"}>{c.status}</Badge>
+                </td>
+                <td class="tabular-nums">{c.totalColetado}</td>
+                <td class="tabular-nums">{c.totalCasado}</td>
+                <td class="tabular-nums">{c.totalEnviado}</td>
+                <td class="max-w-xs truncate text-suave" title={c.erro ?? undefined}>
                   {c.erro ?? "—"}
                 </td>
               </tr>
