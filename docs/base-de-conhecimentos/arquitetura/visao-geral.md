@@ -6,20 +6,23 @@
 
 ## Stack
 
-| Camada | Tecnologia | Igual ao state-sell? |
+| Camada | Tecnologia | Observação |
 |---|---|---|
-| Framework | Next 15 (App Router) + React 19 | ✔ |
-| API | tRPC 11 | ✔ |
-| Banco | Postgres + Drizzle | ✔ |
-| Validação | Zod | ✔ |
-| Estilo | Tailwind v4 (`@theme` + tokens pt-BR) | ✔ (tokens próprios) |
-| Testes | Vitest | ✔ |
-| E-mail | Resend (modo por env) | ✔ |
-| Deploy | Vercel + cron | ✔ |
-| Pacotes | pnpm | ✔ |
+| Framework | **Astro 5** (SSR + prerender) | Escolhido pelo SEO-first: páginas públicas programáticas com ~zero JS |
+| Interatividade | Ilhas React (`@astrojs/react`) | Só onde há estado no client — o padrão é `.astro` puro |
+| Mutations | **Astro Actions** (Zod embutido) | Substitui o tRPC do padrão state-sell |
+| Banco | Postgres + Drizzle | Igual state-sell |
+| Validação | Zod | Igual state-sell |
+| Estilo | Tailwind v4 (`@theme` + tokens pt-BR) | Igual state-sell (tokens próprios) |
+| Testes | Vitest | Igual state-sell |
+| E-mail | Resend (modo por env) | Igual state-sell |
+| Deploy | Vercel (`@astrojs/vercel`) + cron | Cron chama `/api/coleta` com secret |
+| Pacotes | pnpm | Igual state-sell |
 
-Decisão consciente: mesma stack do state-sell para reusar **padrões e
-reflexos**, não código colado.
+Decisão consciente (2026-08-12): Astro no lugar de Next porque a fase Watch
+tem casca fina (landing + cadastro + painel pequeno) e a distribuição é SEO —
+páginas públicas diárias indexáveis. O preço aceito: Actions/auth manual no
+lugar dos reflexos tRPC do state-sell.
 
 ---
 
@@ -34,13 +37,14 @@ API DOE-SP ──(job diário, Zod na borda)──► Postgres (bruto + normaliz
                                               │
                              Resend ──► e-mail digest do assinante
                                               │
-UI (Next) ◄──── tRPC ◄──── banco local  ◄─────┘
+UI (Astro) ◄── frontmatter/Actions ◄── banco local ◄──┘
 ```
 
 Regras de ouro:
 
-- UI **nunca** chama a API do DOE — só o banco via tRPC
-- Job **nunca** renderiza React
+- Browser **nunca** chama a API do DOE — dado nasce no job e mora no banco
+- Página lê via **repositório** no frontmatter; muta via **Action**
+- Job **nunca** importa nada de `astro:*`
 - Match **nunca** faz I/O
 
 ---
@@ -49,21 +53,35 @@ Regras de ouro:
 
 ```
 src/
-├── app/                    # rotas Next (page.tsx só compõe)
-│   └── (rota)/_components | hook | utils
-├── shared/
-│   ├── components/         # ui.tsx (kit) + compartilhados
-│   ├── hook/  utils/  schema/  config/
-├── server/
-│   ├── api/routers/        # tRPC (assinante, keyword, alerta, coleta)
-│   ├── api/erros.ts        # MensagemDeErro
+├── pages/                  # rotas .astro + endpoints (/api/coleta.ts)
+├── layouts/                # Base.astro
+├── components/
+│   ├── ui/                 # kit .astro (Button, Card, Field…)
+│   └── (feature)/          # componentes da feature; ilhas .tsx só se interativo
+├── actions/                # Astro Actions (mutations, Zod, ActionError)
+├── server/                 # ★ núcleo portátil — NÃO importa astro:*
 │   ├── coleta/             # cliente DOE + ingestão (I/O)
 │   ├── match/              # regras puras
 │   ├── alerta/             # seleção + envio
-│   └── db/                 # schema Drizzle + repositórios
-├── fixtures/               # publicações reais rotuladas
-└── pipeline/               # scripts de validação/exploração (fora do app)
+│   ├── db/                 # schema Drizzle + repositórios
+│   └── erros.ts            # MensagemDeErro
+├── styles/global.css       # tokens (:root + @theme)
+fixtures/                   # publicações reais rotuladas
+pipeline/                   # scripts de validação/exploração (fora do app)
 ```
+
+`src/server/` é deliberadamente independente de framework: se um dia a casca
+mudar (de volta a Next, ou outra), o núcleo migra intacto.
+
+---
+
+## Renderização por tipo de página
+
+| Página | Modo |
+|---|---|
+| Landing, páginas SEO públicas | `prerender = true` (estático na CDN) |
+| Painel, cadastro, magic-link | SSR (serverless) |
+| `/api/coleta` | Endpoint SSR protegido por secret (cron) |
 
 ---
 
@@ -72,7 +90,7 @@ src/
 | Hora (SP) | Evento |
 |---|---|
 | ~01h | DOE publica a edição do dia |
-| 06h30 | Cron: coleta + match + seleção |
+| 06h30 | Cron Vercel → `POST /api/coleta`: coleta + match + seleção |
 | ~07h | Envio dos digests |
 | dia todo | UI lê do banco; painel mostra "última leitura" |
 

@@ -10,7 +10,8 @@
 > **"A UI lê só do banco local. O job diário puxa o DOE-SP, valida com Zod e
 > grava o bruto. Alerta atrasado ou falso mata a confiança — precisão e
 > pontualidade acima de features. Zero jargão de Diário Oficial em texto
-> visível. Stack: Next 15 + tRPC + Drizzle/Postgres + Tailwind v4."**
+> visível. Stack: Astro 5 (SSR + prerender) + Actions + Drizzle/Postgres +
+> Tailwind v4 — núcleo em `src/server/` independente de framework."**
 
 ---
 
@@ -28,13 +29,13 @@ base-de-conhecimentos/
 │
 ├── frontend/
 │   ├── tokens-design.md               → CSS vars, Tailwind v4 @theme, tipografia
-│   ├── padrao-por-pagina.md           → Estrutura obrigatória por página (Next)
-│   ├── componentizacao.md             → Quando/como componentizar
-│   ├── estados-de-tela.md             → Loading / empty / error
-│   └── padrao-erros-usuario.md        → TRPCError → toast/tela, copy de erro
+│   ├── padrao-por-pagina.md           → Estrutura obrigatória por página (Astro)
+│   ├── componentizacao.md             → .astro por padrão, quando virar ilha React
+│   ├── estados-de-tela.md             → Empty / error (SSR: loading é exceção)
+│   └── padrao-erros-usuario.md        → ActionError → form/tela, copy de erro
 │
 ├── backend/
-│   ├── api-contracts.md               → Routers tRPC e contratos
+│   ├── api-contracts.md               → Repositórios, Astro Actions e endpoints
 │   ├── fonte-doe-sp.md                → API do DOE-SP: endpoints, campos, armadilhas
 │   └── coleta-e-jobs.md               → Job diário, idempotência, cron, SLA
 │
@@ -72,7 +73,7 @@ Atualizar esta base **sempre que** uma mudança impactar:
 |---|---|
 | Tokens / tema | `frontend/tokens-design.md` |
 | Nova rota / listagem | `frontend/padrao-por-pagina.md` |
-| Router tRPC | `backend/api-contracts.md` |
+| Repositório / Action / endpoint | `backend/api-contracts.md` |
 | Campo novo consumido do DOE | `backend/fonte-doe-sp.md` |
 | Job / cron / SLA | `backend/coleta-e-jobs.md` |
 | Regra de match ou envio | `regras-de-negocio/match-e-alertas.md` |

@@ -1,66 +1,63 @@
-# Contratos de API (tRPC)
+# Contratos de API (Astro Actions + Endpoints)
 
-> Routers em `src/server/api/routers/`. Types fluem pelo tRPC — sem arquivo
-> de tipos manual. Input **sempre** validado com Zod no procedure.
+> **Leituras** acontecem no frontmatter via repositórios (`src/server/db/repositorios/`).
+> **Mutations** acontecem via Astro Actions (`src/actions/index.ts`), input Zod.
+> **Endpoints** (`src/pages/api/`) só para o que não é página nem Action (cron, webhook).
 
-⚠️ **Estado: contratos planejados** — nenhum router implementado ainda.
+⚠️ **Estado: contratos planejados** — nada implementado ainda.
 Ao implementar, atualizar este arquivo com o contrato real e remover o ⚠️.
 
 ---
 
 ## Convenções
 
-- Nomes de router e procedure em **pt-BR**, verbo no infinitivo: `keyword.salvar`, `alerta.listar`
-- Paginação: `pagina` (1-based) + `porPagina` (default 20, máx 100); resposta `{ itens, total }`
-- Strings vazias viram `undefined` no client antes de enviar
-- Erros: `TRPCError` + `MensagemDeErro` (ver `frontend/padrao-erros-usuario.md`)
-- Procedures autenticados via middleware de sessão (magic-link); público só o necessário para landing/cadastro
+- Actions nomeadas em **pt-BR**, agrupadas por domínio: `keyword.salvar`, `assinante.cadastrar`
+- Toda Action: `input` Zod + `ActionError` com `MensagemDeErro` — nunca `throw new Error`
+- Sucesso de form → redirect (POST-redirect-GET)
+- Repositórios de leitura: paginação `{ pagina, porPagina }` (default 20, máx 100) → `{ itens, total }`
+- Autenticação: sessão por cookie (magic-link); helper `exigirSessao(Astro)` nas páginas, `exigirSessaoAction(ctx)` nas Actions
 
 ---
 
-## Routers planejados (fase Watch)
+## Leituras (repositórios) — fase Watch
 
-### `assinante`
+| Função | Contrato |
+|---|---|
+| `listarKeywords(assinanteId)` | → `{ id, termo, criadoEm }[]` |
+| `listarAvisos({ assinanteId, pagina, porPagina })` | → `{ itens, total }`. Item: `{ id, titulo, trecho, urlFonte, dataPublicacao, termoQueBateu, enviadoEm }` |
+| `detalheAviso({ assinanteId, id })` | → item + conteúdo completo, ou `null` (página faz 404) |
+| `ultimaColeta()` | → `{ dataAlvo, status, executadoEm }` — alimenta "última leitura: hoje, 7h04" |
 
-| Procedure | Tipo | Contrato |
-|---|---|---|
-| `cadastrar` | public mutation | `{ email }` → envia magic-link. Nunca revelar se o e-mail já existe |
-| `entrar` | public mutation | `{ token }` → sessão |
-| `me` | auth query | dados do assinante + plano |
+## Mutations (Actions) — fase Watch
 
-### `keyword`
+| Action | Contrato |
+|---|---|
+| `assinante.cadastrar` | `{ email }` → envia magic-link. Nunca revelar se o e-mail já existe |
+| `assinante.sair` | `{}` → encerra sessão |
+| `keyword.salvar` | `{ termo: string (3–80) }` — free: máx 3 (`LIMITE_DE_TERMOS`) |
+| `keyword.remover` | `{ id }` |
 
-| Procedure | Tipo | Contrato |
-|---|---|---|
-| `listar` | auth query | `{}` → `{ itens: { id, termo, criadoEm }[] }` |
-| `salvar` | auth mutation | `{ termo: string (3–80 chars) }` — free: máx 3 (`LIMITE_DE_TERMOS`) |
-| `remover` | auth mutation | `{ id }` |
+Login por magic-link: o link do e-mail aponta para página SSR
+(`/entrar/[token]`) que valida, cria sessão e redireciona — não é Action.
 
-### `alerta`
+## Endpoints (`src/pages/api/`)
 
-| Procedure | Tipo | Contrato |
-|---|---|---|
-| `listar` | auth query | `{ pagina?, porPagina? }` → `{ itens, total }`. Item: `{ id, titulo, trecho, urlFonte, dataPublicacao, termoQueBateu, enviadoEm }` |
-| `detalhe` | auth query | `{ id }` → item + conteúdo completo |
-
-### `coleta` (interno)
-
-| Procedure | Tipo | Contrato |
-|---|---|---|
-| `rodar` | protegido por secret (header) | dispara ingestão do dia — idempotente. Chamado pelo cron, não pela UI |
+| Rota | Contrato |
+|---|---|
+| `POST /api/coleta` | Header de secret (env). Dispara ingestão do dia — idempotente. Chamado pelo cron da Vercel, nunca pela UI. 401 sem secret; 200 com resumo `{ coletados, casados, enviados }` |
 
 ---
 
 ## Regra de ouro
 
-A UI **só** conversa com esses routers. Nunca chamar a API do DOE do
-browser — dado sempre nasce no job e mora no banco.
+A UI **só** conversa com repositórios e Actions. Nunca chamar a API do DOE
+do browser — dado sempre nasce no job e mora no banco.
 
 ---
 
 ## Checklist ao mudar contrato
 
 - [ ] Zod do input atualizado
-- [ ] Pages consumidoras atualizadas
+- [ ] Páginas/forms consumidores atualizados
 - [ ] Este arquivo atualizado
 - [ ] `changelog-local/alteracoes.md`

@@ -54,22 +54,23 @@
 
 | Camada | Responsabilidade |
 |---|---|
-| `src/app/(rotas)/page.tsx` | Composição — sem lógica |
-| `src/app/(rotas)/_components/` | UI exclusiva da página |
-| `src/app/(rotas)/hook/` | `*.hook.ts` queries/estado · `*.action.ts` mutations |
-| `src/shared/components/` | UI usada em 2+ páginas |
-| `src/shared/schema/` | Zod reutilizado |
-| `src/server/api/routers/` | Routers tRPC — query Drizzle, `TRPCError` |
+| `src/pages/*.astro` | Frontmatter orquestra (sessão, query string, repositório); template compõe |
+| `src/pages/api/` | Endpoints (cron da coleta) — protegidos por secret |
+| `src/actions/` | Mutations — Zod + `ActionError` |
+| `src/components/ui/` | Kit base `.astro` |
+| `src/components/(feature)/` | UI da feature; ilha `.tsx` só se interativa |
 | `src/server/coleta/` | Cliente DOE + ingestão (I/O isolado) |
 | `src/server/match/` | Regras puras de match (testáveis sem banco) |
 | `src/server/alerta/` | Seleção e envio |
 | `src/server/db/` | Schema Drizzle + repositórios |
+| `src/server/erros.ts` | `MensagemDeErro` canônica |
 
 ### Regra de acesso
 
-- Página **não** importa Drizzle nem chama a API do DOE
-- Job **não** renderiza React
-- Antes de criar util/componente novo: verificar `src/shared/` primeiro
+- Página **não** monta SQL (usa repositório) e **não** chama a API do DOE
+- `src/server/` **não** importa nada de `astro:*` (núcleo portátil)
+- Browser nunca fala com terceiros — só com nossas páginas/Actions
+- Antes de criar util/componente novo: verificar `src/components/ui/` e `src/shared/` primeiro
 
 ---
 
@@ -78,7 +79,7 @@
 1. **Análise** — qual etapa é afetada: coleta, match, seleção, envio ou interface? Onde nasce o dado?
 2. **Reuso** — existe util, hook, componente, schema ou repositório parecido?
 3. **Validação de contrato** — o campo do DOE que você quer usar **existe mesmo**? Confirmar em `backend/fonte-doe-sp.md` ou por chamada real. O que acontece quando vier `null`?
-4. **Implementação** — regra pura em `src/server/match/`; I/O isolado em cliente/repositório; `page.tsx` só compõe
+4. **Implementação** — regra pura em `src/server/match/`; I/O isolado em cliente/repositório; página só orquestra
 5. **Validação** — loading, vazio, erro, sucesso; o job continua idempotente?; algum texto visível ganhou jargão?
 
 Se o campo não foi verificado, marcar ⚠️ na documentação e verificar com

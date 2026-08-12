@@ -5,6 +5,21 @@
 
 ---
 
+## 2026-08-12 — Troca de casca: Next → Astro
+
+- Decisão: **Astro 5** no lugar de Next. Motivo: fase Watch tem casca fina e
+  a distribuição é SEO (páginas públicas programáticas com ~zero JS) — o
+  cenário ideal do Astro. Preço aceito: Actions/auth manual no lugar dos
+  reflexos tRPC do state-sell
+- Reescritos: `arquitetura/visao-geral.md`, `frontend/padrao-por-pagina.md`,
+  `frontend/componentizacao.md`, `frontend/estados-de-tela.md`,
+  `frontend/padrao-erros-usuario.md`, `backend/api-contracts.md`
+- Novos princípios: leitura via repositório no frontmatter; mutation via
+  Action (form + POST-redirect-GET); estado de filtro na URL; `.astro` por
+  padrão e ilha React só com estado real no client; `src/server/` proibido
+  de importar `astro:*` (núcleo portátil)
+- Deploy continua Vercel (`@astrojs/vercel`); cron chama `POST /api/coleta`
+
 ## 2026-08-12 — Fundação
 
 - Fonte DOE-SP validada por chamadas reais (`pipeline/validate-doe-sp.mjs`,

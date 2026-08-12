@@ -1,7 +1,7 @@
 # Tokens de Design
 
 > Sistema visual canônico do Edital Radar.
-> Fonte (quando o app existir): `src/app/globals.css` (`:root` + `@theme`).
+> Fonte: `src/styles/global.css` (`:root` + `@theme`).
 > Convenção idêntica à do state-sell: tokens em pt-BR, Tailwind v4.
 
 ---

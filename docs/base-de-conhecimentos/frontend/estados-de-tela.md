@@ -1,37 +1,37 @@
 # Estados de Tela — Loading, Empty e Error
 
-> Padrões obrigatórios para todo dado assíncrono.
+> Padrões obrigatórios. Com SSR, a página chega **pronta** — loading é
+> exceção, não regra.
 
 ---
 
-## Regra fundamental
+## Regra fundamental (SSR muda o jogo)
 
-```tsx
-if (isLoading) return <SkeletonDaLista />;
-if (error) return <ErroDeTela onRetry={refetch} />;
-if (!itens.length) return <VazioDaTela />;
-return <Lista itens={itens} />;
+A página renderiza no servidor com os dados já resolvidos. Portanto:
+
+- **Não** existe skeleton de carga inicial — o HTML chega completo
+- Loading só existe em **submissão de form/Action** e em ilhas
+- Os estados que TODA listagem precisa tratar no template: **vazio** e **erro
+  de Action** (o erro de leitura vira página de erro, não estado inline)
+
+```astro
+---
+const { itens, total } = await listarAvisos({ ... }); // falhou? → error page
+---
+{itens.length === 0
+  ? <VazioDaTela />
+  : <ListaDeAvisos itens={itens} />}
 ```
-
-Nunca renderizar lista assumindo que `data` existe sem checar `isLoading`.
 
 ---
 
-## Loading
+## Loading (onde ainda existe)
 
-Preferir skeletons fiéis ao layout real:
-
-```tsx
-// ✔ lista de avisos
-{isLoading && (
-  <div className="mt-8 grid gap-4">
-    {Array.from({ length: 5 }, (_, i) => <CardDeAvisoSkeleton key={i} />)}
-  </div>
-)}
-
-// ✘ spinner genérico
-{isLoading && <p>Carregando...</p>}
-```
+| Situação | Tratamento |
+|---|---|
+| Submit de form | `<Button>` com estado `enviando` (disable + "Salvando…") — pequena ilha ou atributo via JS mínimo |
+| Ilha chamando Action | estado `isPending` local na ilha |
+| Navegação | View Transitions do Astro (opcional) — nunca spinner de página inteira |
 
 ---
 
@@ -39,12 +39,10 @@ Preferir skeletons fiéis ao layout real:
 
 | Contexto | Tratamento |
 |---|---|
-| Detalhe (`/aviso/[id]`) | `notFound()` do Next |
-| Listagem | Mensagem inline + retry (`refetch`) |
-| Rede / 5xx | "Algo deu errado ao carregar. Tente de novo em instantes." |
-| Mutation | toast com a mensagem do backend |
-
-Detalhes: `padrao-erros-usuario.md`.
+| Detalhe inexistente (`/aviso/[id]`) | `Astro.response.status = 404` + render da página 404 (`src/pages/404.astro`) |
+| Falha de leitura no frontmatter | Página de erro padrão (`src/pages/500.astro`): "Algo deu errado ao carregar. Tente de novo em instantes." |
+| `ActionError` em form | Mensagem canônica junto ao campo (`Field erro={...}`) — ver `padrao-erros-usuario.md` |
+| Cron/coleta | Log CLI + notificação interna — nunca aparece para o usuário |
 
 ---
 
@@ -59,7 +57,8 @@ Detalhes: `padrao-erros-usuario.md`.
 
 **Empty ≠ error.** "Nenhum aviso hoje" é o estado mais comum do produto —
 precisa parecer normal e confiável, nunca quebrado. Sempre que possível,
-mostrar a data/hora da última leitura do Diário ("Última leitura: hoje, 7h04").
+mostrar a data/hora da última leitura do Diário ("Última leitura: hoje, 7h04",
+via `ultimaColeta()`).
 
 ---
 
@@ -67,7 +66,7 @@ mostrar a data/hora da última leitura do Diário ("Última leitura: hoje, 7h04"
 
 - `alert()`, `window.confirm()`
 - `console.log` como feedback de UX
-- Toast genérico ignorando a mensagem do backend
+- Spinner de página inteira
 - Esconder aviso de prazo encerrado (mostrar como "encerrado", não sumir)
 
 ---

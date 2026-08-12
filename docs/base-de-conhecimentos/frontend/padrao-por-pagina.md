@@ -1,106 +1,97 @@
 # Padrão por Página
 
-> Estrutura obrigatória para toda feature. Mesmo padrão do state-sell (Next App Router).
+> Estrutura obrigatória para toda rota Astro do Edital Radar.
 
 ---
 
-## Estrutura
+## Anatomia de uma página
 
-```
-src/app/(rota)/
-├── _components/
-│   └── MeuComponente.tsx     # exclusivo desta página
-├── utils/
-│   └── exemplo.utils.ts      # funções puras, constantes, colunas
-├── hook/                     # singular
-│   ├── exemplo.hook.ts       # queries tRPC, estado, efeitos
-│   └── exemplo.action.ts     # mutations, submit, lógica pesada
-└── page.tsx                  # composição — sem lógica
-```
-
+```astro
 ---
+// frontmatter — roda no SERVIDOR a cada request (ou no build, se prerender)
+// 1. sessão/guarda  2. ler query string  3. chamar repositório  4. resultado de Action
+---
+<!-- template — HTML com componentes .astro; ilha React só se interativo -->
+```
 
-## `page.tsx` — só composição
-
-- **Sem** `useState`, `useEffect`, `useQuery` ou `useMutation`
-- Pode receber `params` / `searchParams` e repassar
-- Pode ter Suspense e error boundary
-
-```tsx
-// ✔ CERTO
-export default function AvisosPage() {
-  return (
-    <PaginaTemplate
-      titulo="Seus avisos"
-      subtitulo="O que saiu no Diário Oficial e casa com você"
-    >
-      <FiltrosDeAviso />
-      <ListaDeAvisos />
-    </PaginaTemplate>
-  );
-}
+```
+src/pages/avisos/index.astro        # rota
+src/components/avisos/              # componentes da feature
+src/server/db/repositorios/         # de onde vêm os dados
+src/actions/index.ts                # para onde vão as mutations
 ```
 
 ---
 
-## `hook/*.hook.ts` — queries e estado
+## Frontmatter — só orquestração
 
-```ts
-export function useListaDeAvisos() {
-  const { filtros, setFiltro } = useBusca({ parser: filtrosDeAviso });
-  const { data, isLoading, error } = api.alerta.listar.useQuery(filtros);
-  return { avisos: data?.itens ?? [], total: data?.total ?? 0, filtros, setFiltro, isLoading, error };
-}
-```
-
-Ao mudar qualquer filtro que não seja paginação, **voltar para a página 1**.
-Busca textual sempre com debounce (~300ms).
-
----
-
-## `hook/*.action.ts` — mutations
-
-```ts
-export function useSalvarKeyword() {
-  const utils = api.useUtils();
-  const { mutate, isPending } = api.keyword.salvar.useMutation({
-    onSuccess: () => {
-      toast.success("Pronto — vamos vigiar esse termo para você");
-      utils.keyword.listar.invalidate();
-    },
-    onError: (e) => toast.error(e.message),
-  });
-  return { salvar: (termo: string) => mutate({ termo }), isPending };
-}
-```
-
----
-
-## `utils/*.utils.ts` — puras
-
-Formatações locais, constantes da feature. Nada de I/O.
-
----
-
-## Regras de componentização
-
-1. Componente com menos de 300 linhas — se passar, extrair
-2. Uma responsabilidade por componente
-3. Props tipadas, nunca `any`
-4. Sem lógica de negócio no JSX
-5. Sem `console.log`
-6. Sem `<button>` nativo — usar `<Button>` do kit
-
-## Quando subir para `shared/`
-
-| Situação | Ação |
+| Pode | Não deve |
 |---|---|
-| Componente usado em 2+ páginas | `src/shared/components/` |
-| Hook usado em 2+ páginas | `src/shared/hook/` |
-| Util usada em 2+ páginas | `src/shared/utils/` |
-| Schema Zod reutilizado | `src/shared/schema/` |
+| Checar sessão e redirecionar | Montar SQL inline (usar repositório) |
+| Ler `Astro.url.searchParams` | Chamar a API do DOE |
+| Chamar funções de `src/server/` | Lógica de match/seleção |
+| `Astro.getActionResult(...)` | Formatação complexa (extrair p/ util) |
+| `export const prerender = true` em página pública | Segredos em página prerender |
 
-Nada nasce em `shared/`. Sobe depois do segundo uso real.
+```astro
+---
+export const prerender = false;
+
+const sessao = await exigirSessao(Astro); // redireciona se não logado
+const pagina = Number(Astro.url.searchParams.get("pagina") ?? 1);
+const { itens, total } = await listarAvisos({ assinanteId: sessao.assinanteId, pagina });
+---
+<PaginaBase titulo="Seus avisos" subtitulo="O que saiu no Diário e casa com você">
+  <ListaDeAvisos itens={itens} />
+  <Paginacao total={total} atual={pagina} />
+</PaginaBase>
+```
+
+---
+
+## Estado da tela = URL
+
+Sem estado de filtro em JavaScript. Filtros e paginação vivem na **query
+string** (`?termo=cultura&pagina=2`):
+
+1. Formulário de filtro faz `GET` para a própria rota
+2. Mudou qualquer filtro que não seja paginação → link/submit **sem** `pagina` (volta para 1)
+3. Links de paginação preservam os demais parâmetros
+
+Benefício direto: toda listagem filtrada é compartilhável e indexável.
+
+---
+
+## Mutations — Astro Actions
+
+Formulário HTML + Action. Funciona sem JS (progressive enhancement); ilha só
+para melhorar, nunca para funcionar.
+
+```astro
+---
+import { actions } from "astro:actions";
+const resultado = Astro.getActionResult(actions.keyword.salvar);
+---
+<form method="POST" action={actions.keyword.salvar}>
+  <Field name="termo" label="Termo para vigiar" erro={resultado?.error} />
+  <Button>Vigiar termo</Button>
+</form>
+```
+
+Regras:
+
+- Action valida com Zod e lança `ActionError` com `MensagemDeErro` (ver `padrao-erros-usuario.md`)
+- Sucesso → redirect (pattern POST-redirect-GET) para evitar re-submit
+- Ilha React chamando `actions.x.y()` direto: só quando a UX pedir de verdade
+  (ex.: remover keyword sem recarregar) — e o form continua funcionando sem ela
+
+---
+
+## Ilhas (React)
+
+- Página **nunca** é uma ilha inteira
+- Ilha recebe dados prontos por props — não busca dados própria (exceto chamar Action)
+- Diretiva certa: `client:load` só para interação imediata; preferir `client:idle`/`client:visible`
 
 ---
 
@@ -122,23 +113,29 @@ palavra significa? Então a tela está errada.
 
 ---
 
+## SEO (páginas públicas)
+
+- `prerender = true` + `<title>`/description próprios por página
+- Página programática (ex.: publicações do dia por tema) é conteúdo de
+  produto: URL estável, heading claro, data visível, link para a fonte
+
+---
+
 ## Anti-padrões
 
-```tsx
-// ✘ mutation dentro do componente de UI
-export function BotaoSalvar() {
-  const { mutate } = api.keyword.salvar.useMutation();  // ERRADO
-}
+```astro
+// ✘ SQL na página
+const rows = await db.select().from(publicacao)...   // ERRADO — repositório
 
-// ✘ lógica no page.tsx
-export default function Page() {
-  const [aberto, setAberto] = useState(false);          // ERRADO
-  const { data } = api.alerta.listar.useQuery();        // ERRADO
-}
+// ✘ estado de filtro em ilha
+const [filtro, setFiltro] = useState("")             // ERRADO — query string
 
-// ✘ jargão vazando na interface
-<span>Tipo: Extrato de Inexigibilidade</span>           // ERRADO
+// ✘ ilha para conteúdo estático
+<ListaDeAvisos client:load />                        // ERRADO — .astro puro
+
+// ✘ jargão vazando
+<span>Tipo: Extrato de Inexigibilidade</span>        // ERRADO
 
 // ✘ cor hardcoded
-<h1 className="text-[#2456c9]">                         // ERRADO — text-acento
+<h1 class="text-[#2456c9]">                          // ERRADO — text-acento
 ```

@@ -1,6 +1,6 @@
 # Padrão de Erros ao Usuário
 
-> Como exibir e propagar erros (tRPC + Next).
+> Como exibir e propagar erros (Astro Actions + páginas SSR).
 
 ---
 
@@ -14,21 +14,19 @@ Detalhe técnico fica no server log / job CLI.
 ## Fluxo
 
 ```
-Router tRPC
-  └─ TRPCError({ code, message: MensagemDeErro.X })
+Action (src/actions/)
+  └─ ActionError({ code, message: MensagemDeErro.X })
         ↓
-useQuery → error  |  useMutation → onError
-        ↓
-Query de página: ErroDeTela + retry
-Mutation:        toast.error(e.message)
-Detalhe 404:     notFound()
+Form:   Astro.getActionResult(...) → erro junto ao campo
+Ilha:   const { error } = await actions.x.y(...) → mensagem inline/toast
+Página: recurso inexistente → 404 · falha de leitura → 500
 ```
 
 ---
 
 ## Server — mensagens canônicas
 
-Fonte única `src/server/api/erros.ts` (criar na fundação):
+Fonte única `src/server/erros.ts`:
 
 ```ts
 export const MensagemDeErro = {
@@ -42,45 +40,65 @@ export const MensagemDeErro = {
 ```
 
 ```ts
-// uso no router
-if (!termo) throw new TRPCError({ code: "BAD_REQUEST", message: MensagemDeErro.TERMO_OBRIGATORIO });
+// uso na Action
+import { ActionError } from "astro:actions";
+if (total >= 3) throw new ActionError({ code: "FORBIDDEN", message: MensagemDeErro.LIMITE_DE_TERMOS });
 ```
 
-Nunca `throw new Error` solto em router — sempre `TRPCError` com mensagem
-canônica. Jobs de coleta podem usar `console.error` (CLI, com propósito).
+Nunca `throw new Error` solto em Action — sempre `ActionError` com mensagem
+canônica. Erro de validação Zod já vira `inputErrors` automaticamente — as
+mensagens do schema Zod também usam copy canônica. Jobs de coleta podem usar
+`console.error` (CLI, com propósito).
 
 ---
 
 ## Client
 
+### Form (padrão)
+
+```astro
+---
+import { actions, isInputError } from "astro:actions";
+const resultado = Astro.getActionResult(actions.keyword.salvar);
+const erroTermo = isInputError(resultado?.error)
+  ? resultado.error.fields.termo?.[0]
+  : resultado?.error?.message;
+---
+<form method="POST" action={actions.keyword.salvar}>
+  <Field name="termo" label="Termo para vigiar" erro={erroTermo} />
+  <Button>Vigiar termo</Button>
+</form>
+```
+
+Sucesso → redirect (POST-redirect-GET). A mensagem do backend **já é** a
+copy final — não sobrescrever com texto genérico.
+
 ### Detalhe / recurso único → 404 de página
 
+```astro
+---
+const aviso = await detalheAviso({ assinanteId, id });
+if (!aviso) {
+  Astro.response.status = 404;
+  return Astro.rewrite("/404");
+}
+---
+```
+
+### Ilha React → mensagem inline
+
 ```ts
-if (!aviso) notFound();
+const { error } = await actions.keyword.remover({ id });
+if (error) setMensagem(error.message);
 ```
-
-### Listagem → erro inline com retry
-
-```tsx
-{error && <ErroDeTela mensagem="Algo deu errado ao carregar." onRetry={() => refetch()} />}
-```
-
-### Mutation → toast com a mensagem do backend
-
-```ts
-onError: (e) => toast.error(e.message),
-```
-
-A mensagem do backend **já é** a copy final (canônica, pt-BR) — não
-sobrescrever com texto genérico no client.
 
 ---
 
-## Checklist nova API / page
+## Checklist nova Action / página
 
-- [ ] Router usa `TRPCError` + `MensagemDeErro`
-- [ ] Input validado com Zod no `input()` do procedure
-- [ ] Page trata `error` de query (tela) e de mutation (toast)
+- [ ] Action usa `ActionError` + `MensagemDeErro`; Zod com mensagens canônicas
+- [ ] Form renderiza `getActionResult` (erro junto ao campo)
+- [ ] Detalhe inexistente devolve 404 real (status + página)
 - [ ] Sem `console.log` de payload
 - [ ] Mensagem legível pela coordenadora da ONG (teste da tela)
 
