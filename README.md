@@ -46,7 +46,8 @@ leitura obrigatória: `contexto-produto.md` e `regras-sistemicas-ia.md`.
 - [x] Ingestão diária (cliente Zod + UPSERT por slug + `/api/coleta` + cron) — dry-run real ok
 - [x] Motor de match por keyword (puro, fronteira de palavra, fixtures rotuladas) — provado no DOE real
 - [x] Cobertura full-text (detalhe de tudo + match local; 13/13 vs gabarito da API, ~10s/dia) + criação de alertas
-- [ ] Digest por e-mail (Resend) + descadastro
+- [x] Digest por e-mail (1/assinante, máx 10, termo destacado, dry-run por env) + descadastro em 1 clique
+- [ ] Webhook de bounce → supressão automática
 - [ ] Cadastro por magic-link + painel de termos
 - [ ] Perfil de entidade + match por causa/região (fase Radar)
 

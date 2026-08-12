@@ -44,7 +44,8 @@ function escaparRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function regexDoTermo(termoNormalizado: string): RegExp {
+/** Exportada para o render do e-mail destacar o termo no trecho. */
+export function regexDoTermo(termoNormalizado: string): RegExp {
   const corpo = termoNormalizado.split(" ").map(escaparRegex).join("\\s+");
   // Fronteira: vizinho não pode ser letra/dígito (no texto já normalizado).
   return new RegExp(`(?<![a-z0-9])${corpo}(?![a-z0-9])`);

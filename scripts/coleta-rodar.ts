@@ -31,6 +31,7 @@ if (dryRun) {
     listarKeywords: async () => [], // sem banco não há keywords — match é pulado
     salvarConteudos: async () => {},
     criarAlertas: async () => 0,
+    enviarDigests: async () => ({ emails: 0, alertasEnviados: 0, falhas: 0 }),
     registrar: async () => {},
   };
 } else {
@@ -40,20 +41,38 @@ if (dryRun) {
   );
   const { registrarExecucao } = await import("../src/server/db/repositorios/coleta");
   const { listarKeywordsParaMatch } = await import("../src/server/db/repositorios/keywords");
-  const { criarAlertas } = await import("../src/server/db/repositorios/alertas");
+  const { criarAlertas, listarPendentesParaDigest, marcarEnviados } = await import(
+    "../src/server/db/repositorios/alertas"
+  );
+  const { enviarDigests } = await import("../src/server/alerta/enviar-digests");
+  const { criarClienteDeEmail } = await import("../src/server/alerta/resend");
 
   deps = {
     salvarPublicacoes: (rows) => upsertPublicacoes(db, rows),
     listarKeywords: () => listarKeywordsParaMatch(db),
     salvarConteudos: (casadas) => salvarConteudos(db, casadas),
     criarAlertas: (matches) => criarAlertas(db, matches),
+    enviarDigests: () =>
+      enviarDigests({
+        listarPendentes: () => listarPendentesParaDigest(db),
+        marcarEnviados: (ids) => marcarEnviados(db, ids),
+        cliente: criarClienteDeEmail({
+          apiKey: process.env.RESEND_API_KEY,
+          modo: process.env.RESEND_MODE, // "real" só em produção
+          remetente: process.env.EMAIL_REMETENTE ?? "Edital Radar <avisos@editalradar.com.br>",
+          log: (m) => console.log(`  ${m}`),
+        }),
+        dataAlvo,
+        siteUrl: process.env.SITE_URL ?? "http://localhost:4321",
+        log: (m) => console.log(`  ${m}`),
+      }),
     registrar: (r) =>
       registrarExecucao(db, {
         dataAlvo: r.dataAlvo,
         status: r.status,
         totalColetado: r.totalColetado,
         totalCasado: r.totalCasado,
-        totalEnviado: 0,
+        totalEnviado: r.alertasEnviados,
         erro: r.erro,
       }),
   };

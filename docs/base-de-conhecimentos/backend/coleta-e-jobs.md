@@ -17,9 +17,13 @@ cron (dia útil, ~6h30 America/Sao_Paulo)      → vercel.json: 30 9 * * 1-5 (UT
      3. Gravar bruto + normalizado (UPSERT por slug)          ✔ ingerir.ts + repositório
      4. Match FULL-TEXT (baixa detalhe de tudo, casa local)   ✔ casar-dia.ts (~10s p/ 3,3k)
      5. Criar alertas (dedup por UNIQUE, campo + trecho)      ✔ repositorios/alertas.ts
-     6. Enviar e-mails (~7h), enviado_em na mesma transação   ⚠️ próximo
+     6. Enviar digests (1 e-mail/assinante, máx 10 no corpo)  ✔ alerta/enviar-digests.ts
      7. Registrar execução em coleta_execucao                 ✔ rodar.ts — uma vez, com totais
 ```
+
+O envio (6) roda até em dia sem edição: alerta que falhou no envio de ontem
+continua pendente e sai no próximo ciclo. `enviado_em` só é gravado após o
+provedor confirmar. Bounce/reclamação → supressão ⚠️ (webhook pendente).
 
 Orquestração: `src/server/coleta/rodar.ts` (`rodarDia`) encadeia 1→5 e 7 com
 deps injetadas. Endpoint e CLI só montam as deps reais.

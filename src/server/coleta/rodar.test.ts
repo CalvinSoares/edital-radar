@@ -31,6 +31,7 @@ function depsBase(sobrescrever: Partial<DepsDaRodada> = {}): DepsDaRodada & {
     listarKeywords: async () => [{ id: "kw", assinanteId: "as", termo: "publicação" }],
     salvarConteudos: async () => {},
     criarAlertas: async (matches) => matches.length,
+    enviarDigests: async () => ({ emails: 1, alertasEnviados: 2, falhas: 0 }),
     registrar: async (r) => void registros.push(r),
     buscarPagina: async () => paginaComItens(["a", "b"]),
     buscarDetalhe: async (slug) => ({
@@ -44,14 +45,43 @@ function depsBase(sobrescrever: Partial<DepsDaRodada> = {}): DepsDaRodada & {
 }
 
 describe("rodarDia", () => {
-  it("fluxo completo: ingere, casa (título) e cria alertas", async () => {
+  it("fluxo completo: ingere, casa (título), cria alertas e envia digests", async () => {
     const deps = depsBase();
     const resumo = await rodarDia("2026-08-11", deps);
     expect(resumo.status).toBe("ok");
     expect(resumo.totalColetado).toBe(2);
     expect(resumo.totalCasado).toBe(2); // "publicação" casa no título das duas
     expect(resumo.alertasCriados).toBe(2);
+    expect(resumo.emailsEnviados).toBe(1);
+    expect(resumo.alertasEnviados).toBe(2);
     expect(deps.registros).toHaveLength(1); // registra UMA vez, com totais
+  });
+
+  it("dia sem edição AINDA envia digests pendentes de dias anteriores", async () => {
+    let envioChamado = false;
+    const deps = depsBase({
+      buscarPagina: async () => paginaComItens([]),
+      enviarDigests: async () => {
+        envioChamado = true;
+        return { emails: 1, alertasEnviados: 3, falhas: 0 };
+      },
+    });
+    const resumo = await rodarDia("2026-08-09", deps);
+    expect(resumo.status).toBe("sem_edicao");
+    expect(envioChamado).toBe(true);
+    expect(resumo.alertasEnviados).toBe(3);
+  });
+
+  it("falha total no envio vira status erro — e registra mesmo assim", async () => {
+    const deps = depsBase({
+      enviarDigests: async () => {
+        throw new Error("provedor fora do ar");
+      },
+    });
+    const resumo = await rodarDia("2026-08-11", deps);
+    expect(resumo.status).toBe("erro");
+    expect(resumo.erro).toBe("provedor fora do ar");
+    expect(deps.registros).toHaveLength(1);
   });
 
   it("sem keywords: match pulado, mas execução registrada", async () => {

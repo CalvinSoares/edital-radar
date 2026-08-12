@@ -27,26 +27,45 @@ async function executar(request: Request): Promise<Response> {
   );
   const { registrarExecucao } = await import("../../server/db/repositorios/coleta");
   const { listarKeywordsParaMatch } = await import("../../server/db/repositorios/keywords");
-  const { criarAlertas } = await import("../../server/db/repositorios/alertas");
+  const { criarAlertas, listarPendentesParaDigest, marcarEnviados } = await import(
+    "../../server/db/repositorios/alertas"
+  );
+  const { enviarDigests } = await import("../../server/alerta/enviar-digests");
+  const { criarClienteDeEmail } = await import("../../server/alerta/resend");
 
   const url = new URL(request.url);
   const dataAlvo = url.searchParams.get("data") ?? hojeEmSaoPaulo(new Date());
+  const log = (m: string) => console.error(`[coleta] ${m}`);
 
   const resumo = await rodarDia(dataAlvo, {
     salvarPublicacoes: (rows) => upsertPublicacoes(db, rows),
     listarKeywords: () => listarKeywordsParaMatch(db),
     salvarConteudos: (casadas) => salvarConteudos(db, casadas),
     criarAlertas: (matches) => criarAlertas(db, matches),
+    enviarDigests: () =>
+      enviarDigests({
+        listarPendentes: () => listarPendentesParaDigest(db),
+        marcarEnviados: (ids) => marcarEnviados(db, ids),
+        cliente: criarClienteDeEmail({
+          apiKey: import.meta.env.RESEND_API_KEY,
+          modo: import.meta.env.RESEND_MODE,
+          remetente: import.meta.env.EMAIL_REMETENTE ?? "Edital Radar <avisos@editalradar.com.br>",
+          log,
+        }),
+        dataAlvo,
+        siteUrl: import.meta.env.SITE_URL ?? "http://localhost:4321",
+        log,
+      }),
     registrar: (r) =>
       registrarExecucao(db, {
         dataAlvo: r.dataAlvo,
         status: r.status,
         totalColetado: r.totalColetado,
         totalCasado: r.totalCasado,
-        totalEnviado: 0, // envio de digest ainda não implementado
+        totalEnviado: r.alertasEnviados,
         erro: r.erro,
       }),
-    log: (m) => console.error(`[coleta] ${m}`),
+    log,
   });
 
   const httpStatus = resumo.status === "erro" ? 500 : 200;

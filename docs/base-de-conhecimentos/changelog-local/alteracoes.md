@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-08-12 — Digest por e-mail + descadastro
+
+- `src/server/alerta/`: `selecionarDigests` (pura — 1 e-mail/assinante, máx
+  10 no corpo, excedente comunicado), `renderizarDigest` (pura — título
+  humanizado, termo em strong, escape antes do destaque, disclaimer,
+  descadastro), `enviarDigests` (`enviado_em` só após confirmação do
+  provedor; falha isola por assinante), `criarClienteDeEmail` (Resend HTTP;
+  `RESEND_MODE=real` só em produção; List-Unsubscribe)
+- Schema: `assinante.descadastroToken` (uuid unique) + `descadastradoEm`;
+  filtros de suprimido/descadastrado em keywords e pendentes
+- Página `/descadastrar/[token]` (idempotente, 404 p/ token inválido —
+  caminho verificado no dev server)
+- `rodarDia` agora encadeia o envio (roda até em dia sem edição, para
+  escoar pendentes de falha anterior); registro ganhou totais de envio
+- Envs novas: `EMAIL_REMETENTE`, `SITE_URL`
+- 50 testes; prévia visual do e-mail via `pipeline/gerar-digest-exemplo.ts`
+
 ## 2026-08-12 — Cobertura full-text + criação de alertas
 
 - **Decisão revertida com medição**: a opção B (busca `Terms` da API) caiu —

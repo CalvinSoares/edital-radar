@@ -9,6 +9,7 @@ import type { PublicacaoNormalizada } from "./normalizar";
 import type { StatusDaColeta } from "./calendario";
 import type { KeywordParaMatch, ResultadoDeMatch } from "../match/casar-keywords";
 import type { ResumoDoMatch } from "./casar-dia";
+import type { ResumoDoEnvio } from "../alerta/enviar-digests";
 
 // Falha de detalhe acima disso indica problema sistêmico, não pontual.
 const LIMITE_DE_FALHAS_DE_DETALHE = 0.1;
@@ -20,6 +21,9 @@ export type ResumoDaRodada = {
   totalCasado: number;
   alertasCriados: number;
   falhasDeDetalhe: number;
+  emailsEnviados: number;
+  alertasEnviados: number;
+  falhasDeEnvio: number;
   erro: string | null;
 };
 
@@ -29,6 +33,8 @@ export type DepsDaRodada = {
   salvarConteudos: (casadas: ResumoDoMatch["casadas"]) => Promise<void>;
   /** Insere alertas (dedup pelo UNIQUE do banco); devolve quantos entraram. */
   criarAlertas: (matches: ResultadoDeMatch[]) => Promise<number>;
+  /** Envia os digests pendentes (inclui restos de dias com falha de envio). */
+  enviarDigests: () => Promise<ResumoDoEnvio>;
   registrar: (resumo: ResumoDaRodada) => Promise<void>;
   buscarPagina?: typeof buscarPaginaDoDia;
   buscarDetalhe?: typeof buscarDetalhe;
@@ -53,6 +59,7 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
   let totalCasado = 0;
   let alertasCriados = 0;
   let falhasDeDetalhe = 0;
+  let envio: ResumoDoEnvio = { emails: 0, alertasEnviados: 0, falhas: 0 };
   let erro = ingestao.erro;
 
   // 2. Match full-text + 3. alertas — só se a ingestão rendeu algo.
@@ -86,6 +93,19 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
     }
   }
 
+  // 4. Envio dos digests — roda mesmo em dia sem edição: pode haver alerta
+  // pendente de uma falha de envio anterior. Só é pulado se a rodada já errou.
+  if (!erro) {
+    try {
+      envio = await deps.enviarDigests();
+      if (envio.falhas > 0) {
+        log(`${envio.falhas} digest(s) falharam no envio — permanecem pendentes`);
+      }
+    } catch (e) {
+      erro = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   const status: StatusDaColeta = erro ? "erro" : ingestao.status;
   const resumo: ResumoDaRodada = {
     dataAlvo,
@@ -94,6 +114,9 @@ export async function rodarDia(dataAlvo: string, deps: DepsDaRodada): Promise<Re
     totalCasado,
     alertasCriados,
     falhasDeDetalhe,
+    emailsEnviados: envio.emails,
+    alertasEnviados: envio.alertasEnviados,
+    falhasDeEnvio: envio.falhas,
     erro,
   };
 

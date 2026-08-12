@@ -1,7 +1,8 @@
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db as Db } from "../cliente";
-import { alerta, publicacao } from "../schema";
+import { alerta, assinante, keyword, publicacao } from "../schema";
 import type { ResultadoDeMatch } from "../../match/casar-keywords";
+import type { AlertaPendente } from "../../alerta/selecionar";
 
 /**
  * Cria alertas a partir dos matches do dia. Dedup por
@@ -39,4 +40,37 @@ export async function criarAlertas(db: typeof Db, matches: ResultadoDeMatch[]): 
     .onConflictDoNothing({ target: [alerta.assinanteId, alerta.publicacaoId] })
     .returning({ id: alerta.id });
   return inseridos.length;
+}
+
+/** Alertas ainda não comunicados, de assinantes ativos, prontos para o digest. */
+export async function listarPendentesParaDigest(db: typeof Db): Promise<AlertaPendente[]> {
+  const rows = await db
+    .select({
+      alertaId: alerta.id,
+      assinanteId: alerta.assinanteId,
+      email: assinante.email,
+      descadastroToken: assinante.descadastroToken,
+      termo: keyword.termo,
+      titulo: publicacao.titulo,
+      trecho: alerta.trecho,
+      slug: publicacao.slug,
+      dataPublicacao: publicacao.dataPublicacao,
+    })
+    .from(alerta)
+    .innerJoin(assinante, eq(alerta.assinanteId, assinante.id))
+    .innerJoin(publicacao, eq(alerta.publicacaoId, publicacao.id))
+    .leftJoin(keyword, eq(alerta.keywordId, keyword.id))
+    .where(
+      and(
+        isNull(alerta.enviadoEm),
+        isNull(assinante.suprimidoEm),
+        isNull(assinante.descadastradoEm),
+      ),
+    );
+  return rows.map((r) => ({ ...r, termo: r.termo ?? "seu termo" }));
+}
+
+export async function marcarEnviados(db: typeof Db, alertaIds: string[]): Promise<void> {
+  if (alertaIds.length === 0) return;
+  await db.update(alerta).set({ enviadoEm: sql`now()` }).where(inArray(alerta.id, alertaIds));
 }

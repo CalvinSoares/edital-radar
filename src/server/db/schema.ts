@@ -36,7 +36,11 @@ export const assinante = pgTable("assinante", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   plano: text("plano", { enum: ["free", "radar"] }).notNull().default("free"),
+  // Token do link de descadastro em 1 clique (vai em todo e-mail).
+  descadastroToken: uuid("descadastro_token").notNull().defaultRandom().unique(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  // Descadastro voluntário (link do e-mail).
+  descadastradoEm: timestamp("descadastrado_em", { withTimezone: true }),
   // Bounce forte ou reclamação → supressão permanente.
   suprimidoEm: timestamp("suprimido_em", { withTimezone: true }),
 });

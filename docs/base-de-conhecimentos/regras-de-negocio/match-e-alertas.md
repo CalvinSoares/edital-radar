@@ -43,13 +43,30 @@ O match roda sobre o **texto completo** de toda publicação do dia
 - Falha pontual de detalhe não derruba o dia; acima de 10% vira status
   `erro` na execução
 
-## Seleção — alertas ✔ (parcial)
+## Seleção — alertas ✔
 
 - `criarAlertas` insere um alerta por (assinante, publicação) com `campo` e
   `trecho` — dedup pelo UNIQUE do banco (`onConflictDoNothing`)
-- Assinante suprimido nunca entra (filtro no `listarKeywordsParaMatch`)
-- ⚠️ Pendentes: digest (agrupar 10+ por e-mail), envio via Resend com
-  `enviado_em` na mesma transação, descadastro
+- Assinante suprimido/descadastrado nunca entra (filtros nos repositórios)
+
+## Digest e envio ✔ (`src/server/alerta/`)
+
+- `selecionarDigests` (pura): um e-mail por assinante, mais recente primeiro,
+  máx. 10 no corpo; o excedente vira "e mais N no seu painel" e **também** é
+  marcado como comunicado (não reaparece amanhã)
+- `renderizarDigest` (pura): título humanizado (caixa alta → frase), trecho
+  com termo em `<strong>` (via os mesmos índices do motor), "Você vigia: X",
+  link da fonte, disclaimer fixo e descadastro em 1 clique. HTML escapado
+  ANTES do destaque
+- `enviarDigests`: `enviado_em` só é gravado DEPOIS do provedor confirmar;
+  falha em um assinante não derruba os demais (fica pendente para o dia
+  seguinte — o envio roda até em dia sem edição por isso)
+- `criarClienteDeEmail`: `RESEND_MODE=real` só em produção; qualquer outro
+  valor é dry-run que loga e não envia. Headers `List-Unsubscribe` incluídos
+- Descadastro: token uuid por assinante → página `/descadastrar/[token]`
+  (idempotente; token inválido = 404)
+- ⚠️ Pendentes: webhook de bounce/reclamação → supressão automática;
+  painel para ver o excedente
 
 ## Seleção (o que vira e-mail)
 
