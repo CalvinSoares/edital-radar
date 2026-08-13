@@ -7,6 +7,8 @@ export type ItemChecklist = {
   id: string;
   pergunta: string;
   dica?: string;
+  /** Link de ajuda opcional (ex.: verificar CNPJ no Certidão Zero). */
+  ajuda?: { href: string; rotulo: string };
 };
 
 export type ModalidadeEdital = "chamamento" | "credenciamento" | "fomento" | "generico";
@@ -24,6 +26,10 @@ const BASE: ItemChecklist[] = [
     id: "osc",
     pergunta: "Sua entidade é uma ONG/OSC com CNPJ ativo?",
     dica: "A maioria dos editais de fomento exige organização da sociedade civil.",
+    ajuda: {
+      href: "https://certidao-zero.vercel.app",
+      rotulo: "Não tem certeza? Cheque a situação e sanções da sua entidade no Certidão Zero",
+    },
   },
   {
     id: "causa",

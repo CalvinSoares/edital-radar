@@ -98,6 +98,18 @@ const opcoes: { valor: RespostaChecklist; rotulo: string }[] = [
               <fieldset class="rounded-card border border-borda bg-cartao p-5">
                 <legend class="px-1 font-semibold">{item.pergunta}</legend>
                 {item.dica && <p class="mt-1 text-sm text-suave">{item.dica}</p>}
+                {item.ajuda && (
+                  <p class="mt-1 text-sm">
+                    <a
+                      class="font-medium text-tinta underline decoration-clay decoration-2 underline-offset-4 hover:decoration-ink"
+                      href={item.ajuda.href}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      {item.ajuda.rotulo} →
+                    </a>
+                  </p>
+                )}
                 <div class="mt-3 flex flex-wrap gap-4">
                   {opcoes.map((o) => (
                     <label class="flex items-center gap-2 text-sm">
